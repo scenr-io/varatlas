@@ -2,40 +2,42 @@
 @source "./";
 
 /* ------------------------------------------------------------------ */
-/* Design tokens. varatlas is matte black with white type: no hue anywhere.     */
+/* Design tokens. Matte black with soft white type, tuned for long sessions:    */
+/* text sits around 14:1 rather than a glaring 19:1, the black is lifted to       */
+/* #121212 so light text doesn't bloom, and no surface is pure white.             */
 /* ------------------------------------------------------------------ */
 
 @theme {
-  /* Surfaces: flat, neutral blacks, lifted slightly off #000 so they read matte */
-  --color-page: #0a0a0a;
-  --color-surface: #111111;
-  --color-raised: #1a1a1a;
-  --color-line: #242424;
-  --color-line-strong: #333333;
+  /* Surfaces: flat, neutral, matte */
+  --color-page: #121212;
+  --color-surface: #181818;
+  --color-raised: #202020;
+  --color-line: #2a2a2a;
+  --color-line-strong: #3a3a3a;
 
-  /* Text */
-  --color-fg: #fafafa;
-  --color-fg-2: #b3b3b3;
-  --color-fg-3: #8c8c8c;
+  /* Text: soft whites with a faint warm cast */
+  --color-fg: #e3e1dc;
+  --color-fg-2: #a9a7a2;
+  --color-fg-3: #8a8884;
 
-  /* Interaction: white on black */
-  --color-accent: #fafafa;
-  --color-accent-ink: #0a0a0a;
+  /* Interaction: soft white, never a full-brightness block */
+  --color-accent: #d6d4cf;
+  --color-accent-ink: #121212;
 
   /* Charts: two series told apart by lightness, not hue */
-  --color-series-1: #fafafa;
-  --color-series-2: #6e6e6e;
-  --color-track: #262626;
+  --color-series-1: #d6d4cf;
+  --color-series-2: #6c6a66;
+  --color-track: #2a2a2a;
 
   /* Status stays monochrome; severity is carried by icon shape and label */
-  --color-good: #fafafa;
-  --color-warning: #fafafa;
-  --color-serious: #fafafa;
-  --color-critical: #fafafa;
-  --color-danger: #fafafa;
+  --color-good: #e3e1dc;
+  --color-warning: #e3e1dc;
+  --color-serious: #e3e1dc;
+  --color-critical: #e3e1dc;
+  --color-danger: #d6d4cf;
 
-  /* The scenr credit, in white like everything else */
-  --color-brand: #fafafa;
+  /* The scenr credit, in the same soft white */
+  --color-brand: #e3e1dc;
 
   /* System fonts load instantly. Monospace is reserved for code: keys, values, paths. */
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
