@@ -1,7 +1,8 @@
 import type { ComponentChildren } from "preact";
 import { useMemo, useState } from "preact/hooks";
-import { ChevronRight, FolderTree, LogOut, Package, RefreshCw } from "lucide-preact";
+import { Bug, ChevronRight, Code, FolderTree, LogOut, Package, RefreshCw } from "lucide-preact";
 import { ScenrCredit } from "@/components/ui/ScenrCredit";
+import { NEW_ISSUE_URL, REPO_URL } from "@/links";
 import { buildGroupTree, type GroupNode } from "@/tree";
 import type { EntityRef, GitLabUser, OrgTree } from "@shared/types";
 
@@ -134,8 +135,9 @@ export default function Sidebar({
 
   return (
     <div className="flex h-full flex-col border-r border-line bg-page">
-      <div className="flex h-14 flex-shrink-0 items-center px-5">
+      <div className="flex h-14 flex-shrink-0 items-baseline justify-between px-5 pt-4">
         <span className="font-display text-[26px] leading-none text-fg">varatlas</span>
+        <ScenrCredit />
       </div>
 
       <div className="flex flex-shrink-0 items-center justify-between px-5 pb-2 pt-3">
@@ -168,6 +170,27 @@ export default function Sidebar({
         </div>
       </nav>
 
+      <div className="flex flex-shrink-0 items-center gap-4 border-t border-line px-5 py-2.5 text-xs">
+        <a
+          href={NEW_ISSUE_URL}
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center gap-1.5 text-fg-2 transition-colors hover:text-fg"
+        >
+          <Bug className="h-3.5 w-3.5" aria-hidden="true" />
+          Report an issue
+        </a>
+        <a
+          href={REPO_URL}
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center gap-1.5 text-fg-3 transition-colors hover:text-fg"
+        >
+          <Code className="h-3.5 w-3.5" aria-hidden="true" />
+          Source
+        </a>
+      </div>
+
       <div className="flex flex-shrink-0 items-center gap-3 border-t border-line px-5 py-3">
         {user?.avatar_url ? (
           <img src={user.avatar_url} alt="" className="h-7 w-7 flex-shrink-0 rounded-full" />
@@ -178,7 +201,7 @@ export default function Sidebar({
         )}
         <div className="min-w-0">
           <p className="truncate text-[13px] font-medium leading-tight text-fg">{user?.name || "Unknown user"}</p>
-          <ScenrCredit />
+          {user?.username && <p className="truncate font-mono text-[11px] text-fg-3">@{user.username}</p>}
         </div>
         {canLogout && (
           <button
