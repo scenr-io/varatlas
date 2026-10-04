@@ -1,5 +1,4 @@
-import "server-only";
-import type { GitLabUser } from "@/lib/types";
+import type { GitLabUser } from "../../shared/types";
 import { glJson } from "./client";
 
 export async function whoAmI(token: string): Promise<GitLabUser> {

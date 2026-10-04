@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { discoverTree, isExcludedPath } from "./discovery";
+import { discoverTree, isExcludedPath, listMemberGroups } from "./discovery";
 
 const group = (id: number, full_path: string, parent_id: number | null) => ({
   id,
@@ -52,7 +52,7 @@ describe("discoverTree", () => {
       "/groups/1/projects": [project(10, "acme/platform/api", 2), project(11, "acme/platform/deep/x", 3)],
     });
 
-    const tree = await discoverTree("t");
+    const tree = await discoverTree("t", await listMemberGroups("t"));
 
     expect(tree.groups.map((g) => g.full_path)).toEqual([
       "acme",
@@ -72,7 +72,7 @@ describe("discoverTree", () => {
       "/groups/5/descendant_groups": [],
       "/groups/5/projects": [project(50, "corp/team/svc", 5)],
     });
-    const tree = await discoverTree("t");
+    const tree = await discoverTree("t", await listMemberGroups("t"));
     expect(tree.groups.map((g) => g.id)).toEqual([5]);
     expect(tree.projects.map((p) => p.id)).toEqual([50]);
   });
@@ -84,7 +84,7 @@ describe("discoverTree", () => {
       "/groups/1/descendant_groups": [group(2, "acme/sandbox", 1)],
       "/groups/1/projects": [project(10, "acme/sandbox/tmp", 2), project(11, "acme/app", 1)],
     });
-    const tree = await discoverTree("t");
+    const tree = await discoverTree("t", await listMemberGroups("t"));
     expect(tree.groups.map((g) => g.full_path)).toEqual(["acme"]);
     expect(tree.projects.map((p) => p.path_with_namespace)).toEqual(["acme/app"]);
   });

@@ -1,6 +1,7 @@
 set shell := ["bash", "-eu", "-o", "pipefail", "-c"]
 
 port := "3131"
+api_port := "3132"
 pidfile := ".varatlas.pid"
 logfile := ".varatlas.log"
 
@@ -30,8 +31,8 @@ off:
         kill "$pid" 2>/dev/null || true
         rm -f {{pidfile}}
     fi
-    # sweep anything still bound to the port
-    lsof -ti tcp:{{port}} | xargs kill 2>/dev/null || true
+    # sweep anything still bound to the UI or API port
+    lsof -ti tcp:{{port}},{{api_port}} | xargs kill 2>/dev/null || true
     echo "varatlas off"
 
 # Restart
@@ -57,6 +58,14 @@ dev:
 # Production build + start (foreground)
 prod:
     pnpm build && pnpm start
+
+# Build the container image
+image:
+    docker build -t varatlas:local .
+
+# Run the container image on localhost (uses GITLAB_TOKEN from your shell, if set)
+container:
+    docker run --rm -p 127.0.0.1:{{port}}:3131 -e GITLAB_TOKEN varatlas:local
 
 # Lint, typecheck and test
 check:

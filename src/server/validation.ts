@@ -10,8 +10,8 @@ import type {
   UpdateVariableRequest,
   VariableChanges,
   VariableDraft,
-} from "@/lib/types";
-import { HttpError } from "@/server/http";
+} from "../shared/types";
+import { HttpError } from "./http";
 
 export const KEY_PATTERN = /^[A-Za-z0-9_]{1,255}$/;
 
