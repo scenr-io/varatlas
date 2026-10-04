@@ -9,7 +9,7 @@ function ago(ms: number): string {
   return h < 24 ? `${h} h ago` : `${Math.round(h / 24)} d ago`;
 }
 
-/** "synced 3 min ago", "syncing…", or a refresh error. Re-renders every 30 s to stay current. */
+/** "Synced 3 min ago", "Syncing…", or a refresh error. Re-renders every 30 s to stay current. */
 export function SyncStatus({
   syncedAt,
   refreshing,
@@ -27,16 +27,16 @@ export function SyncStatus({
 
   if (error) {
     return (
-      <p className="font-mono text-[10px] text-warn" title={error}>
-        refresh failed
+      <p className="text-xs text-warning" title={error}>
+        Reload failed
       </p>
     );
   }
-  if (refreshing) return <p className="font-mono text-[10px] text-ink/35">syncing…</p>;
+  if (refreshing) return <p className="text-xs text-fg-3">Syncing…</p>;
   if (syncedAt === null) return null;
   return (
-    <p className="hidden font-mono text-[10px] text-ink/35 sm:block" title={new Date(syncedAt).toLocaleString()}>
-      synced {ago(Math.max(0, now - syncedAt))}
+    <p className="hidden text-xs text-fg-3 sm:block" title={new Date(syncedAt).toLocaleString()}>
+      Synced {ago(Math.max(0, now - syncedAt))}
     </p>
   );
 }

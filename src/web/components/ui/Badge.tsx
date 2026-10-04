@@ -1,27 +1,45 @@
 import type { ComponentChildren } from "preact";
+import { Info, OctagonAlert, TriangleAlert } from "lucide-preact";
+import type { Severity } from "@/insights";
 
 const TONES = {
-  neutral: "bg-black/[0.05] text-ink/55",
-  warn: "bg-warn/10 text-warn",
-  accent: "bg-accent/[0.08] text-accent",
-  pass: "bg-pass/10 text-pass",
+  neutral: "border-line text-fg-2",
+  accent: "border-accent/40 text-accent",
+  good: "border-good/40 text-good",
+  warning: "border-warning/40 text-warning",
+  serious: "border-serious/40 text-serious",
 } as const;
 
-export function Badge({
+export type Tone = keyof typeof TONES;
+
+/** A small outlined label for a variable setting or a status. */
+export function Chip({
   children,
   tone = "neutral",
   title,
 }: {
   children: ComponentChildren;
-  tone?: keyof typeof TONES;
+  tone?: Tone;
   title?: string;
 }) {
   return (
     <span
       title={title}
-      className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-mono text-[9.5px] font-bold tracking-wide ${TONES[tone]}`}
+      className={`inline-flex items-center gap-1 whitespace-nowrap rounded border px-1.5 text-[11px] font-medium leading-[18px] ${TONES[tone]}`}
     >
       {children}
     </span>
   );
+}
+
+const SEVERITY = {
+  serious: { Icon: OctagonAlert, className: "text-serious", label: "Serious" },
+  warning: { Icon: TriangleAlert, className: "text-warning", label: "Warning" },
+  info: { Icon: Info, className: "text-fg-2", label: "Worth a look" },
+} as const;
+
+/** Status is never color alone: every severity has its own icon and an accessible label. */
+export function SeverityIcon({ severity, className = "h-4 w-4" }: { severity: Severity; className?: string }) {
+  const { Icon, className: tone, label } = SEVERITY[severity];
+  return <Icon className={`${className} flex-shrink-0 ${tone}`} aria-label={label} role="img" />;
 }

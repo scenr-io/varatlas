@@ -19,6 +19,15 @@ visibility including masked & hidden, protection, variable expansion, descriptio
 
 ## Features
 
+- **Overview that tells you what to fix.** Findings for secrets that aren't masked or
+  protected, the same key holding different values in unrelated places, copies that could
+  live on a shared parent group, and overridden group variables. Each opens the variables
+  behind it.
+- **The atlas.** Your group hierarchy as bars: where variables are defined and how far
+  they reach. Select a project to see exactly what it receives, including what it inherits
+  and which inherited values are replaced.
+- **Track a key everywhere.** The by-key view and key detail show every place a key is
+  defined, whether the copies agree, and how many projects each one reaches.
 - **Automatic discovery.** Every group, subgroup and project the token can see. No
   config file listing projects.
 - **Fast.** The whole org loads in a few GraphQL queries instead of one REST call per
@@ -31,7 +40,7 @@ visibility including masked & hidden, protection, variable expansion, descriptio
   environment scopes are addressed correctly.
 - **Safe by default.** Values are masked until revealed; masked-and-hidden values are
   never returned by GitLab and are shown as unreadable.
-- **Tiny.** A ~23 KB web UI and a single-file server. The container image is ~50 MB.
+- **Tiny.** A ~30 KB web UI and a single-file server. The container image is ~50 MB.
 - **Works with gitlab.com and self-managed GitLab.**
 
 ## Quick start
@@ -107,7 +116,7 @@ Found a vulnerability? See [SECURITY.md](SECURITY.md).
 ## How it works
 
 ```
-browser (Preact UI, ~23 KB) ──► Hono server (one bundled file)
+browser (Preact UI, ~30 KB) ──► Hono server (one bundled file)
                                  ├─ guards: host / origin / content-type
                                  ├─ snapshot cache (memory, per token)
                                  └─ GitLab: GraphQL for loading, REST for edits

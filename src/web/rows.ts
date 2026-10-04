@@ -1,6 +1,7 @@
 /* Flat row model for the variables table, plus pure filtering helpers. */
 
 import type { EntityType, EntityVariables, GitLabVariable } from "@shared/types";
+import { looksSecret } from "./secrets";
 
 export interface Row {
   entity: EntityType;
@@ -11,7 +12,7 @@ export interface Row {
 }
 
 export type LevelFilter = "all" | EntityType;
-export type AttrFilter = "protected" | "masked" | "file";
+export type AttrFilter = "protected" | "masked" | "file" | "secret";
 
 export interface Filters {
   query: string;
@@ -21,6 +22,8 @@ export interface Filters {
   scope: string;
   /** limit to one group (and everything below it) or one project */
   selection: { entity: EntityType; path: string } | null;
+  /** limit to these rows, e.g. the variables behind a finding */
+  ids: ReadonlySet<string> | null;
 }
 
 export const EMPTY_FILTERS: Filters = {
@@ -29,6 +32,7 @@ export const EMPTY_FILTERS: Filters = {
   attrs: new Set(),
   scope: "all",
   selection: null,
+  ids: null,
 };
 
 export function rowId(r: Row): string {
@@ -76,10 +80,12 @@ export function filterRows(rows: Row[], f: Filters): Row[] {
         return false;
       }
     }
+    if (f.ids && !f.ids.has(rowId(r))) return false;
     if (f.level !== "all" && r.entity !== f.level) return false;
     if (f.attrs.has("protected") && !r.v.protected) return false;
     if (f.attrs.has("masked") && !(r.v.masked || r.v.hidden)) return false;
     if (f.attrs.has("file") && r.v.variable_type !== "file") return false;
+    if (f.attrs.has("secret") && !looksSecret(r.v.key)) return false;
     if (f.scope !== "all" && r.v.environment_scope !== f.scope) return false;
     if (q) {
       const haystack = [

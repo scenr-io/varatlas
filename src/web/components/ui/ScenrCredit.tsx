@@ -5,9 +5,9 @@ export function ScenrCredit({ className = "" }: { className?: string }) {
       href="https://github.com/scenr-io"
       target="_blank"
       rel="noreferrer"
-      className={`font-mono text-[9px] font-bold tracking-[0.2em] transition-colors ${className}`}
+      className={`text-xs text-fg-3 transition-colors hover:text-fg-2 ${className}`}
     >
-      BY <span className="text-brand">SCENR</span>
+      by <span className="font-semibold text-brand">scenr</span>
     </a>
   );
 }

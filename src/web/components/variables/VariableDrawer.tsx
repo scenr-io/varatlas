@@ -1,16 +1,8 @@
-
 import type { ComponentChildren } from "preact";
 import { useEffect, useMemo, useState } from "preact/hooks";
-import { useAutoFocus } from "@/hooks/useAutoFocus";
 import { Loader2, X } from "lucide-preact";
-import type {
-  EntityRef,
-  EntityType,
-  GitLabVariable,
-  OrgTree,
-  VariableDraft,
-  VariableType,
-} from "@shared/types";
+import { useAutoFocus } from "@/hooks/useAutoFocus";
+import type { EntityRef, EntityType, GitLabVariable, OrgTree, VariableDraft, VariableType } from "@shared/types";
 
 export interface DrawerState {
   mode: "create" | "edit";
@@ -19,6 +11,8 @@ export interface DrawerState {
   targetPath: string;
   /** original variable when editing */
   original?: GitLabVariable;
+  /** key to start with when creating, e.g. "add this key somewhere else" */
+  key?: string;
 }
 
 interface Props {
@@ -35,40 +29,37 @@ const KEY_PATTERN = /^[A-Za-z0-9_]{1,255}$/;
 const FORM_ID = "variable-form";
 
 const VISIBILITY_OPTIONS: [Visibility, string, string][] = [
-  ["visible", "Visible", "Value shown in job logs and UI."],
-  ["masked", "Masked", "Hidden in job logs. Value must satisfy masking rules."],
-  [
-    "hidden",
-    "Masked and hidden",
-    "Hidden in logs AND never revealed in the UI/API after creation.",
-  ],
+  ["visible", "Visible", "Shown in job logs and in GitLab."],
+  ["masked", "Masked", "Replaced by [MASKED] in job logs."],
+  ["hidden", "Masked and hidden", "Masked in logs and never shown again, here or in GitLab."],
 ];
 
-const label = "mb-1.5 block font-mono text-[10px] font-bold tracking-[0.16em] text-ink/45";
-const hint = "mt-1.5 text-[11px] leading-relaxed text-ink/40";
+const label = "mb-1.5 block text-[13px] font-medium text-fg";
+const hint = "mt-1.5 text-xs leading-relaxed text-fg-3";
 
-function Checkbox({
+function Choice({
   checked,
-  onChange,
+  disabled = false,
   title,
   children,
+  input,
 }: {
   checked: boolean;
-  onChange: (v: boolean) => void;
+  disabled?: boolean;
   title: string;
   children: ComponentChildren;
+  input: ComponentChildren;
 }) {
   return (
-    <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-black/[0.08] bg-white p-3 hover:border-black/20">
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.currentTarget.checked)}
-        className="mt-0.5 accent-accent"
-      />
+    <label
+      className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors ${
+        checked ? "border-accent/50 bg-accent/5" : "border-line hover:border-line-strong"
+      } ${disabled ? "cursor-not-allowed opacity-45" : ""}`}
+    >
+      {input}
       <span>
-        <span className="block text-[13px] font-semibold text-ink">{title}</span>
-        <span className="block text-[11px] leading-relaxed text-ink/45">{children}</span>
+        <span className="block text-[13px] font-medium text-fg">{title}</span>
+        <span className="block text-xs leading-relaxed text-fg-3">{children}</span>
       </span>
     </label>
   );
@@ -78,9 +69,9 @@ export default function VariableDrawer({ state, tree, busy, onClose, onSubmit }:
   const isEdit = state.mode === "edit";
   const orig = state.original;
 
-  const keyRef = useAutoFocus<HTMLInputElement>(!isEdit);
+  const keyRef = useAutoFocus<HTMLInputElement>(!isEdit && !state.key);
   const [target, setTarget] = useState(`${state.target.entity}:${state.target.id}`);
-  const [key, setKey] = useState(orig?.key ?? "");
+  const [key, setKey] = useState(orig?.key ?? state.key ?? "");
   const [value, setValue] = useState(orig?.value ?? "");
   const [type, setType] = useState<VariableType>(orig?.variable_type ?? "env_var");
   const [scope, setScope] = useState(orig?.environment_scope ?? "*");
@@ -88,7 +79,7 @@ export default function VariableDrawer({ state, tree, busy, onClose, onSubmit }:
     orig?.hidden ? "hidden" : orig?.masked ? "masked" : "visible",
   );
   const [prot, setProt] = useState(orig?.protected ?? false);
-  // GitLab UI: "Expand variable reference" checked ⇔ raw === false
+  // GitLab's "Expand variable reference" is checked when raw is false.
   const [expand, setExpand] = useState(orig ? !orig.raw : true);
   const [description, setDescription] = useState(orig?.description ?? "");
 
@@ -101,10 +92,7 @@ export default function VariableDrawer({ state, tree, busy, onClose, onSubmit }:
   const targets = useMemo(
     () => ({
       groups: tree.groups.map((g) => ({ value: `group:${g.id}`, label: g.full_path })),
-      projects: tree.projects.map((p) => ({
-        value: `project:${p.id}`,
-        label: p.path_with_namespace,
-      })),
+      projects: tree.projects.map((p) => ({ value: `project:${p.id}`, label: p.path_with_namespace })),
     }),
     [tree],
   );
@@ -136,47 +124,43 @@ export default function VariableDrawer({ state, tree, busy, onClose, onSubmit }:
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={onClose} />
+    <div className="fixed inset-0 z-[55] flex justify-end">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
       <div
         role="dialog"
         aria-modal="true"
-        aria-label={isEdit ? "Edit variable" : "Add variable"}
-        className="drawer-in relative flex h-full w-full max-w-[480px] flex-col border-l border-black/[0.08] bg-paper shadow-2xl"
+        aria-labelledby="drawer-title"
+        className="drawer-in relative flex h-full w-full max-w-[480px] flex-col border-l border-line bg-page shadow-2xl shadow-black/60"
       >
-        {/* Header */}
-        <div className="flex h-16 flex-shrink-0 items-center justify-between border-b border-black/[0.06] px-6">
+        <div className="flex items-start justify-between gap-4 border-b border-line px-6 py-5">
           <div className="min-w-0">
-            <p className="font-mono text-[9px] font-bold tracking-[0.2em] text-ink/35">
-              <span className="text-accent">/</span> {isEdit ? "EDIT VARIABLE" : "ADD VARIABLE"}
-            </p>
-            <p className="mt-0.5 truncate font-mono text-[11px] text-ink/55">
-              {state.targetPath}
-            </p>
+            <h2 id="drawer-title" className="text-base font-semibold text-fg">
+              {isEdit ? `Edit ${orig?.key}` : "Add a variable"}
+            </h2>
+            {isEdit && <p className="mt-1 truncate font-mono text-xs text-fg-3">{state.targetPath}</p>}
           </div>
           <button
             onClick={onClose}
             aria-label="Close"
-            className="rounded-lg p-2 text-ink/40 transition-colors hover:bg-black/5 hover:text-ink"
+            className="rounded-md p-1.5 text-fg-3 transition-colors hover:bg-surface hover:text-fg"
           >
-            <X className="h-4.5 w-4.5" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
-        <form id={FORM_ID} onSubmit={submit} className="flex-1 space-y-5 overflow-y-auto px-6 py-6">
-          {/* Target (create only) */}
+        <form id={FORM_ID} onSubmit={submit} className="flex-1 space-y-6 overflow-y-auto px-6 py-6">
           {!isEdit && (
             <div>
               <label className={label} htmlFor="var-target">
-                TARGET
+                Where
               </label>
               <select
                 id="var-target"
                 value={target}
                 onChange={(e) => setTarget(e.currentTarget.value)}
-                className="glass-input w-full font-mono text-[12.5px]"
+                className="field w-full font-mono text-[13px]"
               >
-                <optgroup label="Groups">
+                <optgroup label="Groups (inherited by every project below)">
                   {targets.groups.map((t) => (
                     <option key={t.value} value={t.value}>
                       {t.label}
@@ -191,173 +175,181 @@ export default function VariableDrawer({ state, tree, busy, onClose, onSubmit }:
                   ))}
                 </optgroup>
               </select>
-              <p className={hint}>Group variables are inherited by every project under the group.</p>
             </div>
           )}
 
-          {/* Key */}
           <div>
             <label className={label} htmlFor="var-key">
-              KEY
+              Key
             </label>
             <input
               id="var-key"
+              ref={keyRef}
               value={key}
               onInput={(e) => setKey(e.currentTarget.value)}
               disabled={isEdit}
-              ref={keyRef}
-              placeholder="TF_VAR_cluster_name"
-              className="glass-input w-full font-mono text-[13px] disabled:opacity-55"
+              placeholder="DATABASE_URL"
+              className="field w-full font-mono text-sm disabled:opacity-55"
             />
             {key && !keyValid && (
-              <p className="mt-1.5 text-[11px] font-semibold text-accent">
-                Letters, digits and underscore only.
+              <p className="mt-1.5 text-xs text-serious" role="alert">
+                Use letters, digits and underscores only.
               </p>
             )}
           </div>
 
-          {/* Value */}
           <div>
             <label className={label} htmlFor="var-value">
-              VALUE
+              Value
             </label>
             {valueLocked && (
-              <div className="mb-2 rounded-xl border border-black/[0.08] bg-mist px-4 py-3 font-mono text-[12.5px] text-ink/40">
-                •••••••• hidden. The value cannot be read back; enter a new value to rotate it.
-              </div>
+              <p className="mb-2 text-xs leading-relaxed text-fg-3">
+                This value is hidden and can't be read back. Leave the field empty to keep it, or enter a new
+                value to replace it.
+              </p>
             )}
             <textarea
               id="var-value"
               value={value}
               onInput={(e) => setValue(e.currentTarget.value)}
               rows={type === "file" ? 8 : 4}
-              placeholder={valueLocked ? "New value (leave empty to keep current)" : "Value"}
-              className="glass-input w-full resize-y font-mono text-[12.5px]"
+              placeholder={valueLocked ? "New value" : ""}
+              className="field w-full resize-y font-mono text-[13px]"
               spellcheck={false}
             />
             {visibility !== "visible" && (
-              <p className={hint}>Masked values must be ≥ 8 chars, single line, Base64-safe charset.</p>
+              <p className={hint}>Masked values need at least 8 characters on one line, without spaces.</p>
             )}
           </div>
 
-          {/* Type */}
-          <div>
-            <span className={label}>TYPE</span>
-            <div className="flex gap-2">
-              {(
-                [
-                  ["env_var", "Variable (default)"],
-                  ["file", "File"],
-                ] as const
-              ).map(([v, l]) => (
-                <button
-                  key={v}
-                  type="button"
-                  aria-pressed={type === v}
-                  onClick={() => setType(v)}
-                  className={`flex-1 rounded-xl border px-3 py-2.5 text-[12.5px] font-semibold transition-colors ${
-                    type === v
-                      ? "border-accent/50 bg-accent/[0.06] text-accent"
-                      : "border-black/[0.08] bg-white text-ink/55 hover:border-black/20"
-                  }`}
-                >
-                  {l}
-                </button>
-              ))}
-            </div>
-            <p className={hint}>File type writes the value to a temp file and sets the variable to its path.</p>
-          </div>
-
-          {/* Environments */}
           <div>
             <label className={label} htmlFor="var-scope">
-              ENVIRONMENTS
+              Environments
             </label>
             <input
               id="var-scope"
               value={scope}
               onInput={(e) => setScope(e.currentTarget.value)}
               placeholder="*"
-              className="glass-input w-full font-mono text-[12.5px]"
+              className="field w-full font-mono text-[13px]"
             />
             <p className={hint}>
-              <span className="font-mono">*</span> = all environments. Use names like{" "}
-              <span className="font-mono">production</span> or wildcards like{" "}
-              <span className="font-mono">review/*</span>.
+              <span className="font-mono text-fg-2">*</span> means every environment. Use a name like{" "}
+              <span className="font-mono text-fg-2">production</span> or a pattern like{" "}
+              <span className="font-mono text-fg-2">review/*</span>.
             </p>
           </div>
 
-          {/* Visibility */}
           <fieldset>
-            <legend className={label}>VISIBILITY</legend>
-            <div className="space-y-1.5">
-              {VISIBILITY_OPTIONS.map(([v, l, d]) => {
+            <legend className={label}>Visibility</legend>
+            <div className="space-y-2">
+              {VISIBILITY_OPTIONS.map(([v, title, detail]) => {
                 const disabled = valueLocked || (isEdit && v === "hidden");
                 return (
-                  <label
+                  <Choice
                     key={v}
-                    className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition-colors ${
-                      visibility === v
-                        ? "border-accent/50 bg-accent/[0.05]"
-                        : "border-black/[0.08] bg-white hover:border-black/20"
-                    } ${disabled ? "cursor-not-allowed opacity-45" : ""}`}
+                    checked={visibility === v}
+                    disabled={disabled}
+                    title={title}
+                    input={
+                      <input
+                        type="radio"
+                        name="visibility"
+                        checked={visibility === v}
+                        disabled={disabled}
+                        onChange={() => setVisibility(v)}
+                        className="mt-0.5 accent-accent"
+                      />
+                    }
                   >
-                    <input
-                      type="radio"
-                      name="visibility"
-                      checked={visibility === v}
-                      disabled={disabled}
-                      onChange={() => setVisibility(v)}
-                      className="mt-0.5 accent-accent"
-                    />
-                    <span>
-                      <span className="block text-[13px] font-semibold text-ink">{l}</span>
-                      <span className="block text-[11px] leading-relaxed text-ink/45">{d}</span>
-                    </span>
-                  </label>
+                    {detail}
+                  </Choice>
                 );
               })}
             </div>
             {isEdit && !valueLocked && (
-              <p className={hint}>“Masked and hidden” can only be set when a variable is created.</p>
+              <p className={hint}>GitLab only allows "masked and hidden" when a variable is created.</p>
             )}
           </fieldset>
 
-          {/* Flags */}
           <fieldset>
-            <legend className={label}>FLAGS</legend>
-            <div className="space-y-1.5">
-              <Checkbox checked={prot} onChange={setProt} title="Protect variable">
-                Only exposed to pipelines on protected branches and tags.
-              </Checkbox>
-              <Checkbox checked={expand} onChange={setExpand} title="Expand variable reference">
-                <span className="font-mono">$</span> is treated as the start of another
-                variable&apos;s reference.
-              </Checkbox>
+            <legend className={label}>Options</legend>
+            <div className="space-y-2">
+              <Choice
+                checked={prot}
+                title="Protected branches and tags only"
+                input={
+                  <input
+                    type="checkbox"
+                    checked={prot}
+                    onChange={(e) => setProt(e.currentTarget.checked)}
+                    className="mt-0.5 accent-accent"
+                  />
+                }
+              >
+                Keeps the value out of pipelines on other branches and merge requests.
+              </Choice>
+              <Choice
+                checked={expand}
+                title="Expand variable references"
+                input={
+                  <input
+                    type="checkbox"
+                    checked={expand}
+                    onChange={(e) => setExpand(e.currentTarget.checked)}
+                    className="mt-0.5 accent-accent"
+                  />
+                }
+              >
+                Treats <span className="font-mono text-fg-2">$NAME</span> in the value as a reference to another
+                variable.
+              </Choice>
+              <div>
+                <span className="mb-2 mt-4 block text-[13px] font-medium text-fg">Type</span>
+                <div className="flex overflow-hidden rounded-md border border-line" role="group" aria-label="Type">
+                  {(
+                    [
+                      ["env_var", "Environment variable"],
+                      ["file", "File"],
+                    ] as const
+                  ).map(([t, l]) => (
+                    <button
+                      key={t}
+                      type="button"
+                      aria-pressed={type === t}
+                      onClick={() => setType(t)}
+                      className={`flex-1 px-3 py-2 text-[13px] transition-colors ${
+                        type === t ? "bg-raised font-medium text-fg" : "text-fg-2 hover:text-fg"
+                      }`}
+                    >
+                      {l}
+                    </button>
+                  ))}
+                </div>
+                <p className={hint}>A file variable writes the value to a temporary file and holds its path.</p>
+              </div>
             </div>
           </fieldset>
 
-          {/* Description */}
           <div>
             <label className={label} htmlFor="var-description">
-              DESCRIPTION <span className="text-ink/25">(OPTIONAL)</span>
+              Description <span className="font-normal text-fg-3">(optional)</span>
             </label>
             <input
               id="var-description"
               value={description}
               onInput={(e) => setDescription(e.currentTarget.value)}
-              placeholder="What is this variable for?"
-              className="glass-input w-full text-[13px]"
+              placeholder="What uses this variable?"
+              className="field w-full text-sm"
             />
           </div>
         </form>
 
-        {/* Footer */}
-        <div className="flex flex-shrink-0 items-center justify-end gap-3 border-t border-black/[0.06] bg-mist/60 px-6 py-4">
+        <div className="flex items-center justify-end gap-2 border-t border-line px-6 py-4">
           <button
             onClick={onClose}
             type="button"
-            className="rounded-xl px-4 py-2.5 text-[13px] font-semibold text-ink/55 transition-colors hover:bg-black/5 hover:text-ink"
+            className="rounded-lg px-4 py-2 text-sm font-medium text-fg-2 transition-colors hover:bg-surface hover:text-fg"
           >
             Cancel
           </button>
@@ -365,9 +357,9 @@ export default function VariableDrawer({ state, tree, busy, onClose, onSubmit }:
             type="submit"
             form={FORM_ID}
             disabled={!canSubmit}
-            className="flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-[13px] font-bold text-white transition-colors hover:bg-accent-soft disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-ink transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+            {busy && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
             {isEdit ? "Save changes" : "Add variable"}
           </button>
         </div>
