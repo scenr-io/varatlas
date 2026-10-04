@@ -20,7 +20,6 @@ await build({
 });
 
 const COMPRESSIBLE = /\.(js|css|html|svg|json|txt)$/;
-let files = 0;
 for (const entry of await readdir("dist/public", { recursive: true, withFileTypes: true })) {
   if (!entry.isFile() || !COMPRESSIBLE.test(entry.name)) continue;
   const path = join(entry.parentPath, entry.name);
@@ -30,6 +29,4 @@ for (const entry of await readdir("dist/public", { recursive: true, withFileType
     brotliCompressSync(data, { params: { [constants.BROTLI_PARAM_QUALITY]: 11 } }),
   );
   await writeFile(`${path}.gz`, gzipSync(data, { level: 9 }));
-  files++;
 }
-console.log(`precompressed ${files} web files (br + gz)`);

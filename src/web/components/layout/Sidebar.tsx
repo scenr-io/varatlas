@@ -199,7 +199,7 @@ export default function Sidebar({
           )}
           <div className="min-w-0">
             <p className="truncate text-[13px] font-semibold leading-tight text-white">
-              {user?.name || "—"}
+              {user?.name || "Unknown user"}
             </p>
             <p className="truncate font-mono text-[10px] text-white/35">@{user?.username || ""}</p>
           </div>

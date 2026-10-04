@@ -26,11 +26,11 @@ CI runs the same commands and also builds and smoke-tests the Docker image.
 
 ## Where things live
 
-- `src/server/` — the Hono server. Anything that touches the GitLab token belongs here.
+- `src/server/`: the Hono server. Anything that touches the GitLab token belongs here.
   esbuild bundles it into `dist/server/index.mjs`.
-- `src/web/` — the Preact UI. It runs in the browser: keep it free of secrets and Node APIs.
+- `src/web/`: the Preact UI. It runs in the browser: keep it free of secrets and Node APIs.
   Vite builds it into `dist/public`.
-- `src/shared/` — types used by both.
+- `src/shared/`: types used by both.
 
 ## Guidelines
 
@@ -38,10 +38,10 @@ CI runs the same commands and also builds and smoke-tests the Docker image.
 - **Validate request bodies** in `src/server/validation.ts`; only known fields may reach GitLab.
 - **Keep the UI small.** Prefer plain Preact and a few lines of code over a new dependency.
 - **Preact, not React:** use `onInput` for text fields (`onChange` fires on blur), and give
-  numeric inline styles explicit units (`` `${n}px` ``) — Preact 11 does not add them.
+  numeric inline styles explicit units (`` `${n}px` ``), since Preact 11 does not add them.
 - **Add tests** for logic changes. Server routes can be tested with `app.request()`; mock
   `fetch` for GitLab calls.
-- **Keep pull requests focused** — one change per PR, with a short description of why.
+- **Keep pull requests focused:** one change per PR, with a short description of why.
 
 ## Testing against a real GitLab
 

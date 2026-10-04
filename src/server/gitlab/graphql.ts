@@ -1,5 +1,5 @@
 /*
- * Fast path: load the whole org — groups, projects and every CI/CD variable — with a
+ * Fast path: load the whole org (groups, projects and every CI/CD variable) with a
  * handful of GraphQL queries per root group instead of one REST call per group/project.
  */
 
@@ -191,7 +191,7 @@ export async function fetchOrgGraphQL(
     ),
   ];
 
-  // Rare: more than one page of variables on an entity — fetch those fully over REST.
+  // Rare: more than one page of variables on an entity. Fetch those fully over REST.
   await pooled(
     loaded.filter((l) => l.more),
     10,

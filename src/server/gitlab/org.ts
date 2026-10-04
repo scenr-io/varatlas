@@ -18,7 +18,7 @@ export async function fetchOrg(token: string): Promise<OrgData> {
     const data = await fetchOrgGraphQL(token, rootGroups(memberGroups));
     return { ...data, source: "graphql" };
   } catch (e) {
-    // A bad or under-scoped token fails the same way over REST — don't retry it.
+    // A bad or under-scoped token fails the same way over REST, so don't retry it.
     if (e instanceof GitLabError && (e.status === 401 || e.status === 403)) throw e;
     console.warn(`[varatlas] GraphQL load failed, falling back to REST: ${(e as Error).message}`);
     const tree = await discoverTree(token, memberGroups);

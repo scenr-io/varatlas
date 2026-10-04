@@ -14,7 +14,7 @@ import type {
 
 export interface DrawerState {
   mode: "create" | "edit";
-  /** target entity — fixed in edit mode, pickable in create mode */
+  /** target entity: fixed in edit mode, pickable in create mode */
   target: EntityRef;
   targetPath: string;
   /** original variable when editing */
@@ -223,7 +223,7 @@ export default function VariableDrawer({ state, tree, busy, onClose, onSubmit }:
             </label>
             {valueLocked && (
               <div className="mb-2 rounded-xl border border-black/[0.08] bg-mist px-4 py-3 font-mono text-[12.5px] text-ink/40">
-                •••••••• hidden — the value cannot be read back. Enter a new value to rotate it.
+                •••••••• hidden. The value cannot be read back; enter a new value to rotate it.
               </div>
             )}
             <textarea

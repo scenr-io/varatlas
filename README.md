@@ -1,6 +1,6 @@
 # varatlas
 
-**Find, audit and manage every GitLab CI/CD variable across your whole org — in one place.**
+**Find, audit and manage every GitLab CI/CD variable across your whole org, in one place.**
 
 GitLab shows CI/CD variables one project or group at a time. Once you have dozens of
 groups and hundreds of projects, nobody can answer simple questions any more:
@@ -10,7 +10,7 @@ groups and hundreds of projects, nobody can answer simple questions any more:
 - What does `production` actually receive, and from which group?
 
 varatlas points at a GitLab token, discovers every group, subgroup and project that
-token can see, and puts every CI/CD variable into one searchable table — with full
+token can see, and puts every CI/CD variable into one searchable table, with full
 create / edit / delete support for every GitLab field (type, environment scope,
 visibility including masked & hidden, protection, variable expansion, description).
 
@@ -19,19 +19,19 @@ visibility including masked & hidden, protection, variable expansion, descriptio
 
 ## Features
 
-- **Automatic discovery** — every group, subgroup and project the token can see. No
+- **Automatic discovery.** Every group, subgroup and project the token can see. No
   config file listing projects.
-- **Fast** — the whole org loads in a few GraphQL queries instead of one REST call per
+- **Fast.** The whole org loads in a few GraphQL queries instead of one REST call per
   project; reopening is instant from an in-memory snapshot that refreshes in the background.
-- **One table for the whole org** — filter by group subtree, project, level, environment
+- **One table for the whole org.** Filter by group subtree, project, level, environment
   scope, protected / masked / file, or free-text search over keys, values and paths.
   Virtualized, so thousands of variables scroll smoothly.
-- **Duplicate detection** — keys defined in more than one group or project get a `×N` badge.
-- **Full CRUD** — every GitLab variable field. Same-key variables in different
+- **Duplicate detection.** Keys defined in more than one group or project get a `×N` badge.
+- **Full CRUD.** Every GitLab variable field. Same-key variables in different
   environment scopes are addressed correctly.
-- **Safe by default** — values are masked until revealed; masked-and-hidden values are
+- **Safe by default.** Values are masked until revealed; masked-and-hidden values are
   never returned by GitLab and are shown as unreadable.
-- **Tiny** — a ~23 KB web UI and a single-file server. The container image is ~50 MB.
+- **Tiny.** A ~23 KB web UI and a single-file server. The container image is ~50 MB.
 - **Works with gitlab.com and self-managed GitLab.**
 
 ## Quick start
@@ -46,7 +46,7 @@ docker run --rm -p 127.0.0.1:3131:3131 -e GITLAB_TOKEN=glpat-… varatlas
 
 Or with Compose, from a clone: `GITLAB_TOKEN=glpat-… docker compose up -d`.
 
-Always publish the port on `127.0.0.1` as shown — see [Security model](#security-model).
+Always publish the port on `127.0.0.1` as shown (see [Security model](#security-model)).
 
 ### From source
 
@@ -75,9 +75,9 @@ All settings are optional environment variables (or lines in `.env.local`).
 
 | Variable                 | Default                   | Purpose                                                                                       |
 | ------------------------ | ------------------------- | --------------------------------------------------------------------------------------------- |
-| `GITLAB_TOKEN`           | —                         | Token to use. Skips the token screen and loads the org at startup.                            |
+| `GITLAB_TOKEN`           | (none)                    | Token to use. Skips the token screen and loads the org at startup.                            |
 | `GITLAB_BASE_URL`        | `https://gitlab.com`      | Your GitLab instance.                                                                         |
-| `VARATLAS_EXCLUDE_PATHS` | —                         | Comma-separated path segments to skip, e.g. `sandbox,archive`. Matches any segment of a path. |
+| `VARATLAS_EXCLUDE_PATHS` | (none)                    | Comma-separated path segments to skip, e.g. `sandbox,archive`. Matches any segment of a path. |
 | `VARATLAS_ALLOWED_HOSTS` | `localhost,127.0.0.1,::1` | Hostnames the API answers for. See [Security model](#security-model).                         |
 | `HOST`                   | `127.0.0.1`               | Listen address (`0.0.0.0` in the container image).                                            |
 | `PORT`                   | `3131`                    | Listen port.                                                                                  |
@@ -149,4 +149,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-[MIT](LICENSE) © scenr
+[MIT](LICENSE) © Scenr Technologies Private Limited

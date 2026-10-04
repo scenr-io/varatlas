@@ -13,7 +13,7 @@ import type {
 } from "../shared/types";
 import { HttpError } from "./http";
 
-export const KEY_PATTERN = /^[A-Za-z0-9_]{1,255}$/;
+const KEY_PATTERN = /^[A-Za-z0-9_]{1,255}$/;
 
 type Obj = Record<string, unknown>;
 

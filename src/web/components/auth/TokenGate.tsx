@@ -78,7 +78,7 @@ export default function TokenGate({
             <p className="text-[11.5px] leading-relaxed text-white/40">
               Needs the <span className="font-mono text-white/60">api</span> scope (
               <span className="font-mono text-white/60">read_api</span> for read-only). Kept in an
-              httpOnly cookie and used server-side only — never exposed to the browser. Groups and
+              httpOnly cookie and used server-side only, never exposed to the browser. Groups and
               projects are discovered automatically from the token.
             </p>
           </div>

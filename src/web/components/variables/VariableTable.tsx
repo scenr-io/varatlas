@@ -107,7 +107,7 @@ function VariableRow({
           target="_blank"
           rel="noreferrer"
           className="block truncate font-mono text-[11.5px] text-ink/50 underline-offset-2 hover:text-accent hover:underline"
-          title={`${r.path} — open in GitLab`}
+          title={`Open ${r.path} in GitLab`}
         >
           {r.path}
         </a>

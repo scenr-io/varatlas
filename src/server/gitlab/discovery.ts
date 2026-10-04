@@ -1,5 +1,5 @@
 /*
- * REST discovery — every group, subgroup and project the token can see.
+ * REST discovery: every group, subgroup and project the token can see.
  * The GraphQL loader (graphql.ts) is the fast path; this is its fallback.
  */
 
@@ -59,7 +59,7 @@ export async function discoverTree(token: string, memberGroups: RawGroup[]): Pro
       const descendants = await glPaginated<RawGroup>(token, `/groups/${root.id}/descendant_groups`);
       for (const g of descendants) groupMap.set(g.id, g);
     } catch {
-      /* no access to the descendants listing — member groups still shown */
+      /* no access to the descendants listing; member groups are still shown */
     }
   });
 

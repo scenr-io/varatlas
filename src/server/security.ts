@@ -1,6 +1,6 @@
 /*
- * Request guards for the API. varatlas has no login of its own — whoever can
- * reach the server acts with the configured GitLab token — so the API only
+ * Request guards for the API. varatlas has no login of its own: whoever can
+ * reach the server acts with the configured GitLab token, so the API only
  * answers requests that provably come from the varatlas page itself:
  *
  *  - Host must be an allowed hostname. Blocks DNS rebinding, where a malicious

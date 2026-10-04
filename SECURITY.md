@@ -23,7 +23,7 @@ In scope:
 
 Out of scope:
 
-- Anyone who can already reach the varatlas server directly — by design they act with
+- Anyone who can already reach the varatlas server directly: by design they act with
   its token. Deployments shared over a network must sit behind an authenticating proxy
   (see the README).
 - Vulnerabilities in GitLab itself.

@@ -5,7 +5,7 @@ import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import type { TokenSource } from "../shared/types";
 import { HttpError } from "./http";
 
-export const TOKEN_COOKIE = "varatlas_token";
+const TOKEN_COOKIE = "varatlas_token";
 const THIRTY_DAYS = 60 * 60 * 24 * 30;
 
 export function resolveToken(c: Context): {

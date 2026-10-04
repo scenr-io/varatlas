@@ -88,7 +88,7 @@ export function FilterBar(p: Props) {
         title={
           p.revealAll
             ? "Mask all values again"
-            : "Show every value in plaintext (hidden variables stay hidden — GitLab never returns them)"
+            : "Show every value in plaintext. Hidden variables stay hidden because GitLab never returns them."
         }
         className={`flex items-center gap-1.5 ${chip} ${
           p.revealAll ? "border-warn/50 bg-warn/[0.08] text-warn" : chipOff

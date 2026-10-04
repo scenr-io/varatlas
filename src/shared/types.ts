@@ -12,7 +12,7 @@ export type VariableType = "env_var" | "file";
 
 export interface GitLabVariable {
   key: string;
-  /** null for masked & hidden variables — GitLab never returns the value */
+  /** null for masked & hidden variables, because GitLab never returns the value */
   value: string | null;
   variable_type: VariableType;
   protected: boolean;
