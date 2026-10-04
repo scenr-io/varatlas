@@ -4,7 +4,6 @@ import type { Severity } from "@/insights";
 
 const TONES = {
   neutral: "border-line-strong text-fg-2",
-  accent: "border-fg/60 text-fg",
   good: "border-line-strong text-fg-2",
   warning: "border-fg/60 font-semibold text-fg",
   serious: "border-fg bg-fg font-semibold text-page",

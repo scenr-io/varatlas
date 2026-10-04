@@ -4,13 +4,14 @@ import {
   effectiveRows,
   findFindings,
   groupStats,
-  looksSecret,
   posture,
+  rowsInScope,
   scopeCounts,
   scopesOverlap,
   summarizeKeys,
 } from "./insights";
 import { toRows } from "./rows";
+import { looksSecret } from "./secrets";
 
 const v = (key: string, over: Partial<GitLabVariable> = {}): GitLabVariable => ({
   key,
@@ -100,6 +101,27 @@ describe("effectiveRows", () => {
 
   it("marks partial overrides when a nearer definition covers only some environments", () => {
     expect(find("DB_URL", "acme/platform")?.overriddenIn).toEqual(["production"]);
+  });
+});
+
+describe("rowsInScope", () => {
+  const paths = (scope: Parameters<typeof rowsInScope>[1]) =>
+    [...new Set(rowsInScope(rows, scope).map((r) => r.path))].sort();
+
+  it("covers a group and everything below it", () => {
+    expect(paths({ entity: "group", path: "acme/platform" })).toEqual(["acme/platform", "acme/platform/api"]);
+  });
+
+  it("does not treat a path prefix as a parent", () => {
+    expect(paths({ entity: "group", path: "acme/plat" })).toEqual([]);
+  });
+
+  it("gives a project its own and inherited variables", () => {
+    expect(paths({ entity: "project", path: "acme/web/site" })).toEqual(["acme", "acme/web", "acme/web/site"]);
+  });
+
+  it("covers everything without a selection", () => {
+    expect(rowsInScope(rows, null)).toBe(rows);
   });
 });
 

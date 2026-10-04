@@ -24,14 +24,13 @@ import VariableDrawer, { type DrawerState } from "@/components/variables/Variabl
 import { VariableTable } from "@/components/variables/VariableTable";
 import { useOrgVariables } from "@/hooks/useOrgVariables";
 import {
-  effectiveRows,
   findFindings,
   groupStats,
   isAncestorPath,
   posture,
+  rowsInScope,
   scopeCounts,
   summarizeKeys,
-  type EffectiveRow,
   type Finding,
   type GroupStat,
 } from "@/insights";
@@ -114,11 +113,7 @@ export default function Dashboard() {
 
   const selected = useMemo(() => (selection && tree ? lookup(tree, selection) : null), [selection, tree]);
 
-  const scoped: EffectiveRow[] = useMemo(() => {
-    if (!selected) return rows;
-    if (selected.entity === "project") return effectiveRows(rows, selected.path);
-    return rows.filter((r) => r.path === selected.path || isAncestorPath(selected.path, r.path));
-  }, [rows, selected]);
+  const scoped = useMemo(() => rowsInScope(rows, selected), [rows, selected]);
 
   const pathInView = useCallback(
     (p: string) =>
@@ -142,9 +137,8 @@ export default function Dashboard() {
         level: selected?.entity === "project" ? "all" : level,
         attrs,
         scope,
-        selection: null,
         ids: finding?.rowIds ?? null,
-      }) as EffectiveRow[],
+      }),
     [scoped, query, level, attrs, scope, finding, selected],
   );
 

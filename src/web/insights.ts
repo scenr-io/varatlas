@@ -8,8 +8,6 @@ import type { EntityVariables, OrgTree } from "@shared/types";
 import { rowId, type Row } from "./rows";
 import { looksSecret } from "./secrets";
 
-export { looksSecret };
-
 /* ------------------------------------------------------------------ */
 /* Inheritance helpers                                                 */
 /* ------------------------------------------------------------------ */
@@ -113,6 +111,16 @@ export function effectiveRows(rows: Row[], projectPath: string): EffectiveRow[] 
         Number(!!a.inheritedFrom) - Number(!!b.inheritedFrom) ||
         depth(b.path) - depth(a.path),
     );
+}
+
+/** The rows a selection covers: everything below a group, or what a project receives. */
+export function rowsInScope(
+  rows: Row[],
+  scope: { entity: "group" | "project"; path: string } | null,
+): EffectiveRow[] {
+  if (!scope) return rows;
+  if (scope.entity === "project") return effectiveRows(rows, scope.path);
+  return rows.filter((r) => r.path === scope.path || isAncestorPath(scope.path, r.path));
 }
 
 /* ------------------------------------------------------------------ */

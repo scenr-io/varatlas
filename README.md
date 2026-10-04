@@ -140,6 +140,9 @@ src/
   web/             Preact + Tailwind UI, built by Vite into dist/public
 ```
 
+For the full picture (request flow, caching, the token model, the web app and design
+decisions) see [docs/architecture.md](docs/architecture.md).
+
 **GitLab notes**
 
 - "Masked and hidden" can only be set at creation (a GitLab rule).
