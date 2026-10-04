@@ -1,7 +1,6 @@
 /* CI/CD variable CRUD for groups and projects. */
 
-import "server-only";
-import { pooled } from "@/lib/pooled";
+import { pooled } from "../pooled";
 import type {
   EntityRef,
   EntityType,
@@ -10,7 +9,7 @@ import type {
   OrgTree,
   VariableChanges,
   VariableDraft,
-} from "@/lib/types";
+} from "../../shared/types";
 import { glJson, glPaginated, GitLabError } from "./client";
 
 const CONCURRENCY = 10;

@@ -1,9 +1,10 @@
 node_modules
 dist
 coverage
+.git
+.github
 .env
 .env*.local
-*.tsbuildinfo
+.varatlas.*
+*.log
 .DS_Store
-.varatlas.pid
-.varatlas.log
