@@ -1,5 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
 import { Loader2, Plus } from "lucide-preact";
+import { accessState } from "@/access";
+import { AccessBanner } from "@/components/access/AccessBanner";
+import {
+  AccessProblem,
+  AccessScreen,
+  CheckAgain,
+  checksFor,
+  CreateTokenLink,
+  EnvTokenFix,
+  SecondaryButton,
+} from "@/components/access/AccessProblem";
 import TokenGate from "@/components/auth/TokenGate";
 import Sidebar, { type Selection } from "@/components/layout/Sidebar";
 import { TopBar, type View } from "@/components/layout/TopBar";
@@ -307,8 +318,127 @@ export default function Dashboard() {
   }
 
   if (!auth.configured) {
-    return <TokenGate baseUrl={auth.baseUrl} onConnected={org.start} />;
+    const host = new URL(auth.baseUrl).host;
+    const fromEnv = auth.source === "env";
+
+    if (auth.problem === "unreachable") {
+      return (
+        <AccessScreen>
+          <AccessProblem title={`Can't reach GitLab at ${host}`} actions={<CheckAgain onClick={org.start} />}>
+            <p>
+              varatlas couldn't connect to GitLab, so it can't check your token yet. Make sure{" "}
+              <span className="font-mono text-fg">GITLAB_BASE_URL</span> points at your GitLab, and that this
+              machine can reach it (VPN, proxy or firewall).
+            </p>
+          </AccessProblem>
+        </AccessScreen>
+      );
+    }
+
+    if (auth.problem === "invalid" && fromEnv) {
+      return (
+        <AccessScreen>
+          <AccessProblem
+            title="GitLab refused the server's token"
+            checks={checksFor(auth, "accepted")}
+            actions={
+              <>
+                <CreateTokenLink baseUrl={auth.baseUrl} />
+                <CheckAgain onClick={org.start} />
+              </>
+            }
+          >
+            <p>It may have expired, been revoked, or been copied incompletely.</p>
+            <EnvTokenFix />
+          </AccessProblem>
+        </AccessScreen>
+      );
+    }
+
+    if (auth.problem === "scope") {
+      return (
+        <AccessScreen>
+          <AccessProblem
+            title="This token can't read CI/CD variables"
+            checks={checksFor(auth, "read")}
+            actions={
+              <>
+                <CreateTokenLink baseUrl={auth.baseUrl} />
+                {fromEnv ? (
+                  <CheckAgain onClick={org.start} />
+                ) : (
+                  <SecondaryButton onClick={org.disconnect}>Use a different token</SecondaryButton>
+                )}
+              </>
+            }
+          >
+            <p>
+              GitLab accepts it, but not for CI/CD variables. Create a token with the{" "}
+              <span className="font-mono text-fg">api</span> scope to browse and edit, or{" "}
+              <span className="font-mono text-fg">read_api</span> to browse only.
+            </p>
+            {fromEnv && <EnvTokenFix />}
+          </AccessProblem>
+        </AccessScreen>
+      );
+    }
+
+    return (
+      <TokenGate
+        baseUrl={auth.baseUrl}
+        onConnected={org.start}
+        notice={
+          auth.problem === "invalid"
+            ? "GitLab refused your saved token, so it was removed. It may have expired or been revoked. Paste a new one to continue."
+            : undefined
+        }
+      />
+    );
   }
+
+  const access = accessState(auth, entities);
+  const readOnly = access.kind === "ok" && access.readOnly;
+  const otherToken =
+    auth.source === "cookie" ? (
+      <SecondaryButton onClick={org.disconnect}>Use a different token</SecondaryButton>
+    ) : null;
+  const blocked =
+    access.kind === "no-role" ? (
+      <AccessProblem
+        title="Your account can't read CI/CD variables here"
+        checks={checksFor(auth, "role")}
+        paths={access.paths}
+        actions={
+          <>
+            <CheckAgain onClick={org.refresh} />
+            {otherToken}
+          </>
+        }
+      >
+        <p>
+          You can see {plural(access.paths.length, "group or project", "groups and projects")}, but GitLab only shows
+          CI/CD variables to Maintainers and Owners, and your role is lower in all of them.
+        </p>
+        <p>Ask an Owner to make you a Maintainer, or connect a token from an account that already is one.</p>
+        {auth.source === "env" && <EnvTokenFix />}
+      </AccessProblem>
+    ) : access.kind === "no-groups" ? (
+      <AccessProblem
+        title="This account isn't in any groups"
+        checks={checksFor(auth, "groups")}
+        actions={
+          <>
+            <CheckAgain onClick={org.refresh} />
+            {otherToken}
+          </>
+        }
+      >
+        <p>
+          varatlas starts from the groups your account belongs to on {new URL(auth.baseUrl).host}, and this account
+          has none. Join a group, or connect a token from an account that is a member of one.
+        </p>
+      </AccessProblem>
+    ) : null;
 
   const loading = entities === null && !org.loadError;
   const blockingError = entities === null ? org.loadError : null;
@@ -343,6 +473,7 @@ export default function Dashboard() {
     <>
       <p className="font-medium text-fg">No variables here yet</p>
       <p className="mt-1 text-sm text-fg-2">Variables you add to this group or project show up here.</p>
+      {!readOnly && (
       <button
         onClick={() => openCreate()}
         className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-ink hover:opacity-90"
@@ -350,6 +481,7 @@ export default function Dashboard() {
         <Plus className="h-4 w-4" aria-hidden="true" />
         Add variable
       </button>
+      )}
     </>
   );
 
@@ -378,12 +510,19 @@ export default function Dashboard() {
           syncedAt={org.syncedAt}
           refreshing={org.refreshing}
           refreshError={entities ? org.loadError : null}
-          canAdd={!!tree}
+          canAdd={!!tree && !blocked}
+          readOnly={readOnly}
           onAdd={() => openCreate()}
           onMenu={() => setMobileNav(true)}
         />
 
-        {view === "overview" ? (
+        {access.kind === "ok" && (
+          <AccessBanner readOnly={access.readOnly} expiresInDays={access.expiresInDays} baseUrl={auth.baseUrl} />
+        )}
+
+        {blocked ? (
+          <main className="flex-1 overflow-y-auto px-4 py-10 md:px-8">{blocked}</main>
+        ) : view === "overview" ? (
           <main className="flex-1 overflow-y-auto">
             {overview ? (
               <Overview
@@ -453,6 +592,7 @@ export default function Dashboard() {
                 onEdit={openEdit}
                 onDelete={setDeleting}
                 empty={empty}
+                readOnly={readOnly}
               />
             ) : (
               <KeyTable keys={keysInView} onOpen={setOpenKey} empty={empty} />
@@ -469,6 +609,7 @@ export default function Dashboard() {
           onEdit={openEdit}
           onDelete={setDeleting}
           onAdd={(key) => openCreate(key)}
+          readOnly={readOnly}
         />
       )}
 

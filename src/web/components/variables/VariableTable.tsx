@@ -26,6 +26,7 @@ interface Props {
   onEdit: (r: Row) => void;
   onDelete: (r: Row) => void;
   empty: ComponentChildren;
+  readOnly?: boolean;
 }
 
 export function Centered({ children }: { children: ComponentChildren }) {
@@ -82,6 +83,7 @@ function VariableRow({
   onOpenKey,
   onEdit,
   onDelete,
+  readOnly,
 }: {
   r: EffectiveRow;
   locations: number;
@@ -89,6 +91,7 @@ function VariableRow({
   onOpenKey: (key: string) => void;
   onEdit: (r: Row) => void;
   onDelete: (r: Row) => void;
+  readOnly?: boolean;
 }) {
   const replaced = !!r.overriddenBy;
   return (
@@ -122,6 +125,7 @@ function VariableRow({
         <DefinedIn r={r} />
       </td>
       <td className="whitespace-nowrap px-3 text-right">
+        {!readOnly && (
         <div className="flex justify-end gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
           <button
             onClick={() => onEdit(r)}
@@ -140,6 +144,7 @@ function VariableRow({
             <Trash2 className="h-3.5 w-3.5" />
           </button>
         </div>
+        )}
       </td>
     </tr>
   );
@@ -207,6 +212,7 @@ export function VariableTable(p: Props) {
               onOpenKey={p.onOpenKey}
               onEdit={p.onEdit}
               onDelete={p.onDelete}
+              readOnly={p.readOnly}
             />
           ))}
           {end < p.rows.length && (

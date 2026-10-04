@@ -18,6 +18,8 @@ interface Props {
   refreshing: boolean;
   refreshError: string | null;
   canAdd: boolean;
+  /** read-only tokens can't add variables, so the button isn't offered */
+  readOnly: boolean;
   onAdd: () => void;
   onMenu: () => void;
 }
@@ -55,6 +57,7 @@ export function TopBar(p: Props) {
 
       <div className="ml-auto flex items-center gap-4">
         <SyncStatus syncedAt={p.syncedAt} refreshing={p.refreshing} error={p.refreshError} />
+        {!p.readOnly && (
         <button
           onClick={p.onAdd}
           disabled={!p.canAdd}
@@ -63,6 +66,7 @@ export function TopBar(p: Props) {
           <Plus className="h-4 w-4" aria-hidden="true" />
           <span className="hidden sm:inline">Add variable</span>
         </button>
+        )}
       </div>
     </header>
   );

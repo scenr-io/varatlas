@@ -27,7 +27,9 @@ export function KeyDetail({
   onEdit,
   onDelete,
   onAdd,
+  readOnly = false,
 }: {
+  readOnly?: boolean;
   summary: KeySummary;
   tree: OrgTree;
   onClose: () => void;
@@ -111,6 +113,7 @@ export function KeyDetail({
                       {r.v.environment_scope === "*" ? "all environments" : `environment ${r.v.environment_scope}`}
                     </p>
                   </div>
+                  {!readOnly && (
                   <div className="flex flex-shrink-0 gap-0.5">
                     <button
                       onClick={() => onEdit(r)}
@@ -127,6 +130,7 @@ export function KeyDetail({
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </div>
+                  )}
                 </div>
                 <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-2">
                   <div className="min-w-0 max-w-[260px]">
@@ -140,6 +144,7 @@ export function KeyDetail({
           })}
         </ul>
 
+        {!readOnly && (
         <div className="border-t border-line px-6 py-4">
           <button
             onClick={() => onAdd(summary.key)}
@@ -149,6 +154,7 @@ export function KeyDetail({
             Add {summary.key} somewhere else
           </button>
         </div>
+        )}
       </div>
     </div>
   );

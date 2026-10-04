@@ -7,9 +7,12 @@ import { api } from "@/api";
 export default function TokenGate({
   baseUrl,
   onConnected,
+  notice,
 }: {
   baseUrl: string;
   onConnected: () => void;
+  /** shown above the form, e.g. when a saved token stopped working */
+  notice?: string;
 }) {
   const [token, setToken] = useState("");
   const [busy, setBusy] = useState(false);
@@ -39,6 +42,12 @@ export default function TokenGate({
           Every CI/CD variable in your GitLab org, on one map: where it's defined, what each
           project inherits, and what needs fixing.
         </p>
+
+        {notice && (
+          <p className="mt-6 rounded-lg border border-line-strong px-4 py-3 text-sm leading-relaxed text-fg" role="alert">
+            {notice}
+          </p>
+        )}
 
         <form onSubmit={submit} className="mt-8 rounded-xl border border-line bg-surface p-5">
           <label htmlFor="token" className="mb-2 flex items-center gap-2 text-sm font-medium text-fg">
