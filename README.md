@@ -19,26 +19,44 @@ visibility including masked & hidden, protection, variable expansion, descriptio
 
 ## Features
 
-- **Automatic discovery** — member groups → all descendant subgroups → all projects,
-  paginated, deduplicated and fetched concurrently. No config file listing projects.
+- **Automatic discovery** — every group, subgroup and project the token can see. No
+  config file listing projects.
+- **Fast** — the whole org loads in a few GraphQL queries instead of one REST call per
+  project; reopening is instant from an in-memory snapshot that refreshes in the background.
 - **One table for the whole org** — filter by group subtree, project, level, environment
   scope, protected / masked / file, or free-text search over keys, values and paths.
+  Virtualized, so thousands of variables scroll smoothly.
 - **Duplicate detection** — keys defined in more than one group or project get a `×N` badge.
 - **Full CRUD** — every GitLab variable field. Same-key variables in different
   environment scopes are addressed correctly.
 - **Safe by default** — values are masked until revealed; masked-and-hidden values are
   never returned by GitLab and are shown as unreadable.
+- **Tiny** — a ~23 KB web UI and a single-file server. The container image is ~50 MB.
 - **Works with gitlab.com and self-managed GitLab.**
 
 ## Quick start
 
-Requires Node.js ≥ 20.9 and [pnpm](https://pnpm.io).
+### Docker
+
+```bash
+docker build -t varatlas https://github.com/scenr-io/varatlas.git
+docker run --rm -p 127.0.0.1:3131:3131 -e GITLAB_TOKEN=glpat-… varatlas
+# → http://localhost:3131
+```
+
+Or with Compose, from a clone: `GITLAB_TOKEN=glpat-… docker compose up -d`.
+
+Always publish the port on `127.0.0.1` as shown — see [Security model](#security-model).
+
+### From source
+
+Requires Node.js ≥ 22.12 and [pnpm](https://pnpm.io).
 
 ```bash
 git clone https://github.com/scenr-io/varatlas.git
 cd varatlas
 pnpm install
-pnpm dev            # → http://localhost:3131
+pnpm build && pnpm start      # → http://localhost:3131
 ```
 
 Paste a GitLab personal access token on the first screen, or set it once:
@@ -51,31 +69,35 @@ cp .env.example .env.local   # then set GITLAB_TOKEN=glpat-…
 with 403). You need the **Maintainer** role on a group or project to read its
 variables; anything you can't read is listed in a warning banner.
 
-If you use [just](https://github.com/casey/just): `just on`, `just off`, `just logs`.
-
 ## Configuration
 
-All settings are optional environment variables (put them in `.env.local`).
+All settings are optional environment variables (or lines in `.env.local`).
 
-| Variable                 | Default                         | Purpose                                                                                     |
-| ------------------------ | ------------------------------- | ------------------------------------------------------------------------------------------- |
-| `GITLAB_TOKEN`           | —                               | Token to use. If set, the token screen is skipped.                                          |
-| `GITLAB_BASE_URL`        | `https://gitlab.com`            | Your GitLab instance.                                                                       |
-| `VARATLAS_EXCLUDE_PATHS` | —                               | Comma-separated path segments to skip, e.g. `sandbox,archive`. Matches any segment of a path. |
-| `VARATLAS_ALLOWED_HOSTS` | `localhost,127.0.0.1,::1`       | Hostnames the API answers for. See [Security model](#security-model).                       |
+| Variable                 | Default                   | Purpose                                                                                       |
+| ------------------------ | ------------------------- | --------------------------------------------------------------------------------------------- |
+| `GITLAB_TOKEN`           | —                         | Token to use. Skips the token screen and loads the org at startup.                            |
+| `GITLAB_BASE_URL`        | `https://gitlab.com`      | Your GitLab instance.                                                                         |
+| `VARATLAS_EXCLUDE_PATHS` | —                         | Comma-separated path segments to skip, e.g. `sandbox,archive`. Matches any segment of a path. |
+| `VARATLAS_ALLOWED_HOSTS` | `localhost,127.0.0.1,::1` | Hostnames the API answers for. See [Security model](#security-model).                         |
+| `HOST`                   | `127.0.0.1`               | Listen address (`0.0.0.0` in the container image).                                            |
+| `PORT`                   | `3131`                    | Listen port.                                                                                  |
 
 ## Security model
 
 varatlas is a **single-user, local tool**. Read this before running it anywhere else.
 
 - **There is no login.** Whoever can reach the server acts with the configured GitLab
-  token and can read and change every variable it can see. `pnpm dev` and `pnpm start`
-  therefore bind to `127.0.0.1` only.
+  token and can read and change every variable it can see. The server listens on
+  `127.0.0.1` by default; publish container ports on `127.0.0.1` only.
 - **The token stays server-side.** It comes from `GITLAB_TOKEN` or an `httpOnly`,
-  `SameSite=Strict` cookie and is only ever sent to your GitLab instance.
+  `SameSite=Strict` cookie and is only ever sent to your GitLab instance. Snapshots are
+  kept in memory only, never written to disk.
 - **Browser-based attacks are blocked.** API requests must carry an allowed `Host`
   header (stops DNS rebinding), and every state-changing request must be same-origin
-  JSON (stops cross-site form posts). Pages cannot be framed.
+  JSON (stops cross-site form posts). A strict Content-Security-Policy allows only
+  same-origin scripts, and pages cannot be framed.
+- **Hardened container.** Distroless image, no shell, runs as a non-root user, works with
+  a read-only filesystem and all capabilities dropped (see `compose.yaml`).
 - **Sharing it with a team?** Put it behind your own authenticating reverse proxy
   (SSO, VPN, etc.), then add that hostname to `VARATLAS_ALLOWED_HOSTS`. Never expose it
   directly.
@@ -85,23 +107,28 @@ Found a vulnerability? See [SECURITY.md](SECURITY.md).
 ## How it works
 
 ```
-browser ──► Next.js API routes (src/app/api) ──► GitLab REST API v4
-             │  proxy.ts: host / origin / content-type guards
-             └─ src/server: token resolution, validation, GitLab client
+browser (Preact UI, ~23 KB) ──► Hono server (one bundled file)
+                                 ├─ guards: host / origin / content-type
+                                 ├─ snapshot cache (memory, per token)
+                                 └─ GitLab: GraphQL for loading, REST for edits
 ```
+
+- **Loading:** one REST call lists your groups, then a few paginated GraphQL queries per
+  root group fetch every subgroup, project and variable. If GraphQL is unavailable (older
+  self-managed GitLab), varatlas falls back to REST automatically.
+- **Caching:** the server keeps the last snapshot in memory. Opening the UI shows it
+  instantly and refreshes it in the background when it is older than 30 seconds. Edits
+  update the snapshot in place.
 
 ```
 src/
-  app/            Next.js App Router: page, layout, API routes
-  proxy.ts        request guards for /api/*
-  server/         server-only code
-    gitlab/       client (pagination, 429 retry), discovery, variables, user
-    auth.ts       token resolution (env or cookie)
-    validation.ts request-body validation (only known fields reach GitLab)
-    security.ts   host / origin / content-type checks
-  lib/            code shared with the browser: types, API client, row & tree logic
-  hooks/          useOrgVariables — auth, data loading and mutations
-  components/     UI, grouped by feature
+  server/          Hono app, run as dist/server/index.mjs
+    gitlab/        GitLab client (REST + GraphQL, 429 retry), loaders, variable CRUD
+    snapshot.ts    in-memory snapshot cache
+    security.ts    request guards
+    validation.ts  request-body validation (only known fields reach GitLab)
+  shared/          types shared by server and browser
+  web/             Preact + Tailwind UI, built by Vite into dist/public
 ```
 
 **GitLab notes**
@@ -112,10 +139,10 @@ src/
 ## Development
 
 ```bash
-pnpm dev          # dev server on http://localhost:3131
+pnpm dev          # UI with hot reload + API server → http://localhost:3131
 pnpm check        # lint + typecheck + tests
 pnpm test:watch   # tests in watch mode
-pnpm build        # production build
+pnpm build        # production build → dist/
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).

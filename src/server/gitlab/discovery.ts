@@ -1,14 +1,16 @@
-/* Discovery — every group, subgroup and project the token can see. */
+/*
+ * REST discovery — every group, subgroup and project the token can see.
+ * The GraphQL loader (graphql.ts) is the fast path; this is its fallback.
+ */
 
-import "server-only";
-import { pooled } from "@/lib/pooled";
-import type { OrgTree, TreeGroup, TreeProject } from "@/lib/types";
-import { excludedSegments } from "@/server/config";
+import type { OrgTree, TreeGroup, TreeProject } from "../../shared/types";
+import { excludedSegments } from "../config";
+import { pooled } from "../pooled";
 import { glPaginated } from "./client";
 
 const CONCURRENCY = 6;
 
-interface RawGroup {
+export interface RawGroup {
   id: number;
   name: string;
   full_path: string;
@@ -34,36 +36,33 @@ export function isExcludedPath(fullPath: string, excluded: string[]): boolean {
     .some((seg) => excluded.includes(seg));
 }
 
-export async function discoverTree(token: string): Promise<OrgTree> {
-  const excluded = excludedSegments();
+/** Every group the token is a member of (subgroups included). */
+export function listMemberGroups(token: string): Promise<RawGroup[]> {
+  return glPaginated<RawGroup>(token, "/groups?min_access_level=20&order_by=path&sort=asc");
+}
 
-  // 1. Every group the token is a member of (subgroups included).
-  const memberGroups = await glPaginated<RawGroup>(
-    token,
-    "/groups?min_access_level=20&order_by=path&sort=asc",
-  );
+/** Roots are groups whose parent isn't visible to the token. */
+export function rootGroups(groups: RawGroup[]): RawGroup[] {
+  const ids = new Set(groups.map((g) => g.id));
+  return groups.filter((g) => g.parent_id === null || !ids.has(g.parent_id));
+}
+
+export async function discoverTree(token: string, memberGroups: RawGroup[]): Promise<OrgTree> {
+  const excluded = excludedSegments();
   const groupMap = new Map<number, RawGroup>();
   for (const g of memberGroups) groupMap.set(g.id, g);
+  const roots = rootGroups(memberGroups);
 
-  // 2. Roots are groups whose parent isn't visible. Walk their descendants so
-  //    deep subgroups the token inherits access to are never missed.
-  const roots = memberGroups.filter(
-    (g) => g.parent_id === null || !groupMap.has(g.parent_id),
-  );
-
+  // Walk descendants of each root so deep subgroups the token inherits access to are never missed.
   await pooled(roots, CONCURRENCY, async (root) => {
     try {
-      const descendants = await glPaginated<RawGroup>(
-        token,
-        `/groups/${root.id}/descendant_groups`,
-      );
+      const descendants = await glPaginated<RawGroup>(token, `/groups/${root.id}/descendant_groups`);
       for (const g of descendants) groupMap.set(g.id, g);
     } catch {
       /* no access to the descendants listing — member groups still shown */
     }
   });
 
-  // 3. Projects under every root, subgroups included.
   const projectMap = new Map<number, RawProject>();
   await pooled(roots, CONCURRENCY, async (root) => {
     try {

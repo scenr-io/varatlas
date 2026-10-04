@@ -27,6 +27,15 @@ export function hostnameOf(host: string | null): string | null {
   return h.split(":")[0] || null;
 }
 
+function originHostOf(origin: string | null): string | null {
+  if (!origin) return null;
+  try {
+    return new URL(origin).host.toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
 export function checkApiRequest(
   req: { method: string; headers: Headers },
   allowedHosts: string[],
@@ -43,14 +52,7 @@ export function checkApiRequest(
 
   if (SAFE_METHODS.has(req.method.toUpperCase())) return { ok: true };
 
-  const origin = req.headers.get("origin");
-  let originHost: string | null = null;
-  try {
-    originHost = origin ? new URL(origin).host.toLowerCase() : null;
-  } catch {
-    originHost = null;
-  }
-  if (originHost !== host.trim().toLowerCase()) {
+  if (originHostOf(req.headers.get("origin")) !== host.trim().toLowerCase()) {
     return { ok: false, status: 403, error: "Cross-origin request blocked" };
   }
 
