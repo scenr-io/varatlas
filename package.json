@@ -1,0 +1,43 @@
+{
+  "name": "varatlas",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Find, audit and manage every GitLab CI/CD variable across your whole org.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/scenr-io/varatlas.git"
+  },
+  "packageManager": "pnpm@10.33.2",
+  "engines": {
+    "node": ">=20.9"
+  },
+  "scripts": {
+    "dev": "next dev -H 127.0.0.1 -p 3131",
+    "build": "next build",
+    "start": "next start -H 127.0.0.1 -p 3131",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "pnpm lint && pnpm typecheck && pnpm test"
+  },
+  "dependencies": {
+    "lucide-react": "^1.17.0",
+    "next": "16.2.7",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "server-only": "^0.0.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.7",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "vitest": "^3"
+  }
+}
