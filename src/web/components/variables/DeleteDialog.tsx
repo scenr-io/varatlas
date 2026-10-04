@@ -53,7 +53,7 @@ export function DeleteDialog({
           <button
             onClick={onConfirm}
             disabled={busy}
-            className="flex items-center gap-2 rounded-lg bg-danger px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-lg bg-fg px-4 py-2 text-sm font-semibold text-page hover:opacity-90 disabled:opacity-50"
           >
             {busy && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
             Delete variable

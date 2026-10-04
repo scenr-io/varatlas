@@ -2,40 +2,40 @@
 @source "./";
 
 /* ------------------------------------------------------------------ */
-/* Design tokens. varatlas is dark only: a night nautical chart.       */
+/* Design tokens. varatlas is matte black with white type: no hue anywhere.     */
 /* ------------------------------------------------------------------ */
 
 @theme {
-  /* Surfaces, from the page up */
-  --color-page: #0c171b;
-  --color-surface: #12212a;
-  --color-raised: #1a2d37;
-  --color-line: #253b46;
-  --color-line-strong: #33505d;
+  /* Surfaces: flat, neutral blacks, lifted slightly off #000 so they read matte */
+  --color-page: #0a0a0a;
+  --color-surface: #111111;
+  --color-raised: #1a1a1a;
+  --color-line: #242424;
+  --color-line-strong: #333333;
 
   /* Text */
-  --color-fg: #e4edef;
-  --color-fg-2: #a7bcc2;
-  --color-fg-3: #7e979f;
+  --color-fg: #fafafa;
+  --color-fg-2: #b3b3b3;
+  --color-fg-3: #8c8c8c;
 
-  /* Interaction: one accent, sea glass */
-  --color-accent: #6fd0c3;
-  --color-accent-ink: #08201d;
+  /* Interaction: white on black */
+  --color-accent: #fafafa;
+  --color-accent-ink: #0a0a0a;
 
-  /* Charts (validated for colorblind safety on the surface color) */
-  --color-series-1: #3987e5;
-  --color-series-2: #d95926;
-  --color-track: #1d3a4a;
+  /* Charts: two series told apart by lightness, not hue */
+  --color-series-1: #fafafa;
+  --color-series-2: #6e6e6e;
+  --color-track: #262626;
 
-  /* Status: findings only, always with an icon and a label */
-  --color-good: #0ca30c;
-  --color-warning: #fab219;
-  --color-serious: #ec835a;
-  --color-critical: #e05252;
-  --color-danger: #c43c3c; /* solid fill behind white text */
+  /* Status stays monochrome; severity is carried by icon shape and label */
+  --color-good: #fafafa;
+  --color-warning: #fafafa;
+  --color-serious: #fafafa;
+  --color-critical: #fafafa;
+  --color-danger: #fafafa;
 
-  /* scenr's brand red, for the credit only */
-  --color-brand: #d34244;
+  /* The scenr credit, in white like everything else */
+  --color-brand: #fafafa;
 
   /* System fonts load instantly. Monospace is reserved for code: keys, values, paths. */
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;

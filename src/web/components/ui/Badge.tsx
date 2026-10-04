@@ -3,11 +3,11 @@ import { Info, OctagonAlert, TriangleAlert } from "lucide-preact";
 import type { Severity } from "@/insights";
 
 const TONES = {
-  neutral: "border-line text-fg-2",
-  accent: "border-accent/40 text-accent",
-  good: "border-good/40 text-good",
-  warning: "border-warning/40 text-warning",
-  serious: "border-serious/40 text-serious",
+  neutral: "border-line-strong text-fg-2",
+  accent: "border-fg/60 text-fg",
+  good: "border-line-strong text-fg-2",
+  warning: "border-fg/60 font-semibold text-fg",
+  serious: "border-fg bg-fg font-semibold text-page",
 } as const;
 
 export type Tone = keyof typeof TONES;
@@ -33,9 +33,9 @@ export function Chip({
 }
 
 const SEVERITY = {
-  serious: { Icon: OctagonAlert, className: "text-serious", label: "Serious" },
-  warning: { Icon: TriangleAlert, className: "text-warning", label: "Warning" },
-  info: { Icon: Info, className: "text-fg-2", label: "Worth a look" },
+  serious: { Icon: OctagonAlert, className: "text-fg", label: "Serious" },
+  warning: { Icon: TriangleAlert, className: "text-fg", label: "Warning" },
+  info: { Icon: Info, className: "text-fg-3", label: "Worth a look" },
 } as const;
 
 /** Status is never color alone: every severity has its own icon and an accessible label. */
