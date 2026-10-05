@@ -105,6 +105,8 @@ export interface AuthStatus {
   baseUrl: string;
   token?: TokenAccess;
   problem?: AuthProblem;
+  /** the built-in demo org (VARATLAS_DEMO=1): sample data, changes stay in memory */
+  demo?: boolean;
 }
 
 /* API payloads ------------------------------------------------------ */

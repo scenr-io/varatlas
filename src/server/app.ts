@@ -7,10 +7,10 @@ import { compress } from "hono/compress";
 import { secureHeaders } from "hono/secure-headers";
 import type { AuthProblem, AuthStatus, GitLabVariable } from "../shared/types";
 import { clearTokenCookie, requireToken, resolveToken, setTokenCookie } from "./auth";
-import { allowedHosts, gitlabBaseUrl } from "./config";
+import { gitlabBackend, type Backend } from "./backend";
+import { allowedHosts } from "./config";
 import { GitLabError } from "./gitlab/client";
-import { canReadVariables, tokenAccess, whoAmI } from "./gitlab/user";
-import { createVariable, deleteVariable, updateVariable } from "./gitlab/variables";
+import { canReadVariables } from "./gitlab/user";
 import { HttpError } from "./http";
 import { checkApiRequest } from "./security";
 import type { SnapshotStore } from "./snapshot";
@@ -60,7 +60,21 @@ async function readJson(req: Request): Promise<unknown> {
   }
 }
 
-export function createApp({ store, publicDir }: { store: SnapshotStore; publicDir?: string }) {
+export function createApp({
+  store,
+  publicDir,
+  backend = gitlabBackend,
+  demo = false,
+}: {
+  store: SnapshotStore;
+  publicDir?: string;
+  /** where variables come from; the built-in demo org when `demo` is set */
+  backend?: Backend;
+  demo?: boolean;
+}) {
+  const { whoAmI, tokenAccess, createVariable, updateVariable, deleteVariable } = backend;
+  const gitlabBaseUrl = () => backend.baseUrl();
+  const withDemo = (status: AuthStatus): AuthStatus => (demo ? { ...status, demo: true } : status);
   const app = new Hono();
 
   app.use(compress());
@@ -118,7 +132,7 @@ export function createApp({ store, publicDir }: { store: SnapshotStore; publicDi
     if (!canReadVariables(info)) {
       return c.json<AuthStatus>({ configured: false, source, baseUrl, user: user.value, token: tokenInfo, problem: "scope" });
     }
-    return c.json<AuthStatus>({ configured: true, source, user: user.value, baseUrl, token: tokenInfo });
+    return c.json<AuthStatus>(withDemo({ configured: true, source, user: user.value, baseUrl, token: tokenInfo }));
   });
 
   /** POST /api/auth: check a pasted token and keep it in the session cookie. */

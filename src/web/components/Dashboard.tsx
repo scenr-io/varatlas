@@ -513,7 +513,12 @@ export default function Dashboard() {
         />
 
         {access.kind === "ok" && (
-          <AccessBanner readOnly={access.readOnly} expiresInDays={access.expiresInDays} baseUrl={auth.baseUrl} />
+          <AccessBanner
+            readOnly={access.readOnly}
+            expiresInDays={access.expiresInDays}
+            baseUrl={auth.baseUrl}
+            demo={auth.demo}
+          />
         )}
 
         {blocked ? (

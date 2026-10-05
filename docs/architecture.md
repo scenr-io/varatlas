@@ -47,6 +47,8 @@ src/
     security.ts           host / origin / content-type guards
     validation.ts         request-body parsing; only known fields reach GitLab
     snapshot.ts           in-memory snapshot cache per token
+    backend.ts            where variables come from: GitLab, or the demo org
+    demo.ts               the demo org (VARATLAS_DEMO=1)
     config.ts             environment settings
     http.ts               HttpError
     pooled.ts             bounded-concurrency map
@@ -145,6 +147,15 @@ sequenceDiagram
   and matched exactly.
 
 `client.ts` retries 429 responses, honouring `Retry-After`, and follows REST pagination.
+
+### Demo mode
+
+With `VARATLAS_DEMO=1`, `index.ts` swaps the GitLab backend for `demo.ts`: a made-up
+company served from memory, with no token and no network. The routes, guards, cache and
+UI are the same code paths as with GitLab; only `backend.ts` and the snapshot loader
+change. Its data triggers every finding at least once, which makes it the source of the
+README screenshots, and a test keeps it that way. Changes are applied in memory and
+vanish on restart; the UI shows a demo banner.
 
 ### Snapshot cache
 
