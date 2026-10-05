@@ -4,6 +4,7 @@ import {
   effectiveRows,
   findFindings,
   groupStats,
+  parentPaths,
   posture,
   rowsInScope,
   scopeCounts,
@@ -68,6 +69,11 @@ describe("helpers", () => {
     expect(looksSecret("SSH_PUBLIC_KEY")).toBe(false);
     expect(looksSecret("AWS_ACCESS_KEY_ID")).toBe(false);
     expect(looksSecret("AWS_DEFAULT_REGION")).toBe(false);
+  });
+
+  it("lists parent paths, nearest first", () => {
+    expect(parentPaths("acme/platform/api")).toEqual(["acme/platform", "acme"]);
+    expect(parentPaths("acme")).toEqual([]);
   });
 
   it("treats * as overlapping every scope", () => {

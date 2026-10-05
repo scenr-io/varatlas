@@ -154,6 +154,7 @@ decisions) see [docs/architecture.md](docs/architecture.md).
 pnpm dev          # UI with hot reload + API server → http://localhost:3131
 pnpm check        # lint + typecheck + tests
 pnpm test:watch   # tests in watch mode
+pnpm bench        # time the analysis on a synthetic 20,000-variable org
 pnpm build        # production build → dist/
 ```
 

@@ -22,7 +22,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm deadcode",
-    "deadcode": "knip"
+    "deadcode": "knip",
+    "bench": "tsx scripts/bench.ts"
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",
