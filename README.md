@@ -25,9 +25,7 @@ Demo mode serves a made-up company with sample data, so you can explore everythi
 before connecting your GitLab:
 
 ```bash
-git clone https://github.com/scenr-io/varatlas.git && cd varatlas
-docker build -t varatlas .
-docker run --rm -p 127.0.0.1:3131:3131 -e VARATLAS_DEMO=1 varatlas
+docker run --rm -p 127.0.0.1:3131:3131 -e VARATLAS_DEMO=1 ghcr.io/scenr-io/varatlas
 # → http://localhost:3131
 ```
 
@@ -76,12 +74,16 @@ empty page. Read-only tokens get a read-only view.
 ### Docker
 
 ```bash
-docker build -t varatlas https://github.com/scenr-io/varatlas.git
-docker run --rm -p 127.0.0.1:3131:3131 -e GITLAB_TOKEN=glpat-… varatlas
+docker run --rm -p 127.0.0.1:3131:3131 -e GITLAB_TOKEN=glpat-… ghcr.io/scenr-io/varatlas
 # → http://localhost:3131
 ```
 
-Or with Compose, from a clone: `GITLAB_TOKEN=glpat-… docker compose up -d`.
+Images are published for amd64 and arm64. Pin a version (for example
+`ghcr.io/scenr-io/varatlas:0.1.0`) for anything long-lived; see
+[releases](https://github.com/scenr-io/varatlas/releases).
+
+Or with Compose: download [`compose.yaml`](compose.yaml), then run
+`GITLAB_TOKEN=glpat-… docker compose up -d`.
 
 Always publish the port on `127.0.0.1` as shown (see [Security model](#security-model)).
 

@@ -59,7 +59,7 @@ dev:
 prod:
     pnpm build && pnpm start
 
-# Build the container image
+# Build the container image locally (published images: ghcr.io/scenr-io/varatlas)
 image:
     docker build -t varatlas:local .
 

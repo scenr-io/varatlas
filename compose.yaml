@@ -1,8 +1,7 @@
 # docker compose up -d   →   http://localhost:3131
 services:
   varatlas:
-    build: .
-    image: varatlas:local
+    image: ghcr.io/scenr-io/varatlas:latest
     restart: unless-stopped
     # Published on localhost only: varatlas has no login of its own (see README → Security model).
     ports:
