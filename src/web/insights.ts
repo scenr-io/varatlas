@@ -24,6 +24,25 @@ export function scopesOverlap(a: string, b: string): boolean {
 
 const depth = (path: string) => path.split("/").length;
 
+/** Every parent path of `path`, nearest first: "a/b/c" → ["a/b", "a"]. */
+export function parentPaths(path: string): string[] {
+  const out: string[] = [];
+  for (let i = path.lastIndexOf("/"); i > 0; i = path.lastIndexOf("/", i - 1)) out.push(path.slice(0, i));
+  return out;
+}
+
+/** Group rows into lists by a key, appending in place (no copying per insert). */
+function groupBy<T>(items: T[], keyOf: (item: T) => string): Map<string, T[]> {
+  const out = new Map<string, T[]>();
+  for (const item of items) {
+    const k = keyOf(item);
+    const list = out.get(k);
+    if (list) list.push(item);
+    else out.set(k, [item]);
+  }
+  return out;
+}
+
 /* ------------------------------------------------------------------ */
 /* Per-key summaries                                                   */
 /* ------------------------------------------------------------------ */
@@ -50,9 +69,7 @@ function consistency(rows: Row[]): Consistency {
 }
 
 export function summarizeKeys(rows: Row[]): KeySummary[] {
-  const byKey = new Map<string, Row[]>();
-  for (const r of rows) byKey.set(r.v.key, [...(byKey.get(r.v.key) ?? []), r]);
-  return [...byKey.entries()]
+  return [...groupBy(rows, (r) => r.v.key).entries()]
     .map(([key, list]) => ({
       key,
       rows: list,
@@ -145,16 +162,12 @@ export interface Finding {
 
 /** (key, scope) pairs defined in more than one place that don't inherit from each other. */
 function unrelatedCopies(rows: Row[]) {
-  const groups = new Map<string, Row[]>();
-  for (const r of rows) {
-    const k = `${r.v.key}\u0000${r.v.environment_scope}`;
-    groups.set(k, [...(groups.get(k) ?? []), r]);
-  }
   const out: { rows: Row[]; values: Consistency }[] = [];
-  for (const list of groups.values()) {
+  for (const list of groupBy(rows, (r) => `${r.v.key}\u0000${r.v.environment_scope}`).values()) {
     if (list.length < 2) continue;
-    const related = list.some((a) => list.some((b) => a !== b && isAncestorPath(a.path, b.path)));
-    if (related) continue;
+    // Related copies (one inherits from another) are overrides, not duplicates.
+    const paths = new Set(list.map((r) => r.path));
+    if (list.some((r) => parentPaths(r.path).some((p) => paths.has(p)))) continue;
     out.push({ rows: list, values: consistency(list) });
   }
   return out;
@@ -226,13 +239,13 @@ export function findFindings(rows: Row[], entities: EntityVariables[]): Finding[
     unit: shared.length === 1 ? "key" : "keys",
   });
 
+  const groupRowsByKey = groupBy(
+    rows.filter((r) => r.entity === "group"),
+    (r) => r.v.key,
+  );
   const overrides = rows.filter((r) =>
-    rows.some(
-      (g) =>
-        g.entity === "group" &&
-        g.v.key === r.v.key &&
-        isAncestorPath(g.path, r.path) &&
-        scopesOverlap(g.v.environment_scope, r.v.environment_scope),
+    (groupRowsByKey.get(r.v.key) ?? []).some(
+      (g) => isAncestorPath(g.path, r.path) && scopesOverlap(g.v.environment_scope, r.v.environment_scope),
     ),
   );
   findings.push({
@@ -298,31 +311,45 @@ export interface GroupStat {
 
 /** Per-group totals for the atlas, in tree order (parents before children). */
 export function groupStats(tree: OrgTree, rows: Row[]): GroupStat[] {
-  const paths = new Set(tree.groups.map((g) => g.full_path));
-  const topDepth = (path: string) => {
-    let d = 0;
-    let p = path;
-    while (p.includes("/")) {
-      p = p.slice(0, p.lastIndexOf("/"));
-      if (paths.has(p)) d++;
-    }
-    return d;
-  };
-  return [...tree.groups]
-    .sort((a, b) => a.full_path.localeCompare(b.full_path))
-    .map((g) => {
-      const below = (p: string) => p === g.full_path || isAncestorPath(g.full_path, p);
-      return {
-        id: g.id,
-        name: g.name,
-        path: g.full_path,
-        depth: topDepth(g.full_path),
-        own: rows.filter((r) => r.entity === "group" && r.path === g.full_path).length,
-        inSubgroups: rows.filter(
-          (r) => r.entity === "group" && r.path !== g.full_path && below(r.path),
-        ).length,
-        inProjects: rows.filter((r) => r.entity === "project" && below(r.path)).length,
-        projects: tree.projects.filter((p) => below(p.path_with_namespace)).length,
-      };
+  const stats = new Map<string, GroupStat>();
+  for (const g of [...tree.groups].sort((a, b) => a.full_path.localeCompare(b.full_path))) {
+    stats.set(g.full_path, {
+      id: g.id,
+      name: g.name,
+      path: g.full_path,
+      depth: 0,
+      own: 0,
+      inSubgroups: 0,
+      inProjects: 0,
+      projects: 0,
     });
+  }
+
+  // Visible parent groups of a path, cached: many variables share a path.
+  const cache = new Map<string, GroupStat[]>();
+  const parentsOf = (path: string) => {
+    let found = cache.get(path);
+    if (!found) {
+      found = parentPaths(path)
+        .map((p) => stats.get(p))
+        .filter((s): s is GroupStat => s !== undefined);
+      cache.set(path, found);
+    }
+    return found;
+  };
+
+  // One pass: credit each variable and project to every group above it.
+  for (const s of stats.values()) s.depth = parentsOf(s.path).length;
+  for (const r of rows) {
+    if (r.entity === "group") {
+      const self = stats.get(r.path);
+      if (self) self.own++;
+      for (const s of parentsOf(r.path)) s.inSubgroups++;
+    } else {
+      for (const s of parentsOf(r.path)) s.inProjects++;
+    }
+  }
+  for (const p of tree.projects) for (const s of parentsOf(p.path_with_namespace)) s.projects++;
+
+  return [...stats.values()];
 }

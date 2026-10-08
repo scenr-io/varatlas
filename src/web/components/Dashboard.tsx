@@ -123,12 +123,14 @@ export default function Dashboard() {
     [selected],
   );
 
+  // Org-wide results are computed once per snapshot; a selection only narrows them.
+  const allFindings = useMemo(() => findFindings(rows, entities ?? []), [rows, entities]);
+  const allStats = useMemo(() => (tree ? groupStats(tree, rows) : []), [tree, rows]);
+
   const findings = useMemo(() => {
     const inView = new Map(scoped.filter((r) => !r.overriddenBy).map((r) => [rowId(r), r as Row]));
-    return findFindings(rows, entities ?? [])
-      .map((f) => scopeFinding(f, inView, pathInView))
-      .filter((f) => f.count > 0);
-  }, [rows, entities, scoped, pathInView]);
+    return allFindings.map((f) => scopeFinding(f, inView, pathInView)).filter((f) => f.count > 0);
+  }, [allFindings, scoped, pathInView]);
 
   const filtered = useMemo(
     () =>
@@ -175,7 +177,7 @@ export default function Dashboard() {
     let atlas;
     if (selected?.entity === "project") {
       // Lineage: what the project gets from each parent group, and what it defines itself.
-      const ancestors = groupStats(tree, rows).filter((s) => isAncestorPath(s.path, selected.path));
+      const ancestors = allStats.filter((s) => isAncestorPath(s.path, selected.path));
       stats = [
         ...ancestors.map((s) => ({
           ...s,
@@ -201,7 +203,7 @@ export default function Dashboard() {
         labels: { first: "Inherited from the group", second: "Defined on the project" },
       };
     } else {
-      stats = groupStats(tree, rows).filter(
+      stats = allStats.filter(
         (s) => !selected || s.path === selected.path || isAncestorPath(selected.path, s.path),
       );
       atlas = {
@@ -219,7 +221,7 @@ export default function Dashboard() {
       scopes: scopeCounts(live),
       keys: summarizeKeys(live),
     };
-  }, [tree, entities, rows, scoped, selected, findings]);
+  }, [tree, entities, allStats, scoped, selected, findings]);
 
   /* ---------------- actions ---------------- */
 
@@ -511,7 +513,12 @@ export default function Dashboard() {
         />
 
         {access.kind === "ok" && (
-          <AccessBanner readOnly={access.readOnly} expiresInDays={access.expiresInDays} baseUrl={auth.baseUrl} />
+          <AccessBanner
+            readOnly={access.readOnly}
+            expiresInDays={access.expiresInDays}
+            baseUrl={auth.baseUrl}
+            demo={auth.demo}
+          />
         )}
 
         {blocked ? (

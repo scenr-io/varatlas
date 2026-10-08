@@ -47,6 +47,8 @@ src/
     security.ts           host / origin / content-type guards
     validation.ts         request-body parsing; only known fields reach GitLab
     snapshot.ts           in-memory snapshot cache per token
+    backend.ts            where variables come from: GitLab, or the demo org
+    demo.ts               the demo org (VARATLAS_DEMO=1)
     config.ts             environment settings
     http.ts               HttpError
     pooled.ts             bounded-concurrency map
@@ -146,6 +148,15 @@ sequenceDiagram
 
 `client.ts` retries 429 responses, honouring `Retry-After`, and follows REST pagination.
 
+### Demo mode
+
+With `VARATLAS_DEMO=1`, `index.ts` swaps the GitLab backend for `demo.ts`: a made-up
+company served from memory, with no token and no network. The routes, guards, cache and
+UI are the same code paths as with GitLab; only `backend.ts` and the snapshot loader
+change. Its data triggers every finding at least once, which makes it the source of the
+README screenshots, and a test keeps it that way. Changes are applied in memory and
+vanish on restart; the UI shows a demo banner.
+
 ### Snapshot cache
 
 `snapshot.ts` keeps the last loaded org per token, keyed by a SHA-256 of the token:
@@ -210,8 +221,9 @@ flowchart TD
 | `groupStats` | The atlas: variables on each group versus below it |
 | `posture`, `scopeCounts` | Protection meters and environment breakdown |
 
-These are pure functions with unit tests. Findings are computed for the whole org and
-then narrowed to the current selection, because drift and overrides need the full picture.
+These are pure functions with unit tests. Findings and atlas statistics are computed
+once per snapshot for the whole org (drift and overrides need the full picture), and a
+selection only narrows them.
 
 ### Rendering
 
@@ -252,6 +264,7 @@ amd64 + arm64 image to GHCR.
 - **Web:** the pure modules (`rows`, `insights`, `access`, `tree`, `virtual`) are unit
   tested.
 - **Dead code:** `knip` runs as part of `pnpm check`.
+- **Performance:** `pnpm bench` times the analysis on a synthetic 20,000-variable org.
 
 `pnpm check` runs all of the above locally.
 
@@ -266,10 +279,18 @@ Measured on a real org (18 groups, 31 projects, 60 variables):
 | Browser download | about 31 KB (brotli) |
 | Server bundle | about 70 KB |
 
-**Known limit.** On a synthetic org with 20,000 variables, `findFindings` (about 570 ms)
-and `groupStats` (about 700 ms) run again whenever the selection changes. They should be
-computed once per snapshot and indexed by key and path. Filtering and search stay
-under 5 ms at that size.
+**At scale.** `pnpm bench` times the analysis on a synthetic org with 500 groups,
+3,000 projects and 20,000 variables:
+
+| | |
+| --- | --- |
+| Findings, atlas statistics and key summaries (once per data load) | about 25 ms in total |
+| Selecting a group or project in the sidebar | about 1 ms |
+| A search keystroke | about 3 ms |
+
+The org-wide results are computed once per snapshot and a selection only narrows them.
+Each analysis is a single pass, indexed by key and by parent path, so the cost grows
+with the number of variables rather than with its square.
 
 ## Design decisions
 
