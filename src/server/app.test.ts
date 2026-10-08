@@ -101,7 +101,7 @@ describe("/api/variables", () => {
     expect(store.patch).toHaveBeenCalledWith("glpat-test", { entity: "project", id: 7 }, expect.any(Function));
   });
 
-  it("passes GitLab errors through with their status", async () => {
+  it("explains a missing role on changes", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => new Response(JSON.stringify({ message: "403 Forbidden" }), { status: 403 })),
@@ -113,7 +113,22 @@ describe("/api/variables", () => {
       }),
     );
     expect(res.status).toBe(403);
-    expect(await res.json()).toEqual({ error: "403 Forbidden" });
+    expect((await res.json()).error).toMatch(/Maintainer role/);
+  });
+
+  it("explains a read-only token on changes", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify({ error: "insufficient_scope", scope: "api" }), { status: 403 })),
+    );
+    const res = await createApp({ store: makeStore() }).request(
+      req("/api/variables", {
+        method: "DELETE",
+        body: JSON.stringify({ entity: "group", id: 1, key: "A", scope: "*" }),
+      }),
+    );
+    expect(res.status).toBe(403);
+    expect((await res.json()).error).toMatch(/can only read.*api scope/);
   });
 });
 
@@ -141,5 +156,63 @@ describe("/api/auth", () => {
     expect(cookie).toContain("varatlas_token=glpat-new");
     expect(cookie).toContain("HttpOnly");
     expect(cookie).toContain("SameSite=Strict");
+  });
+});
+
+/** Fake GitLab answering /user and /personal_access_tokens/self. */
+function gitlab(user: { status: number; body?: unknown }, self: { status: number; body?: unknown }) {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (url: string) => {
+      const r = String(url).includes("/personal_access_tokens/self") ? self : user;
+      return new Response(JSON.stringify(r.body ?? {}), { status: r.status });
+    }),
+  );
+}
+const ADA = { username: "ada", name: "Ada", avatar_url: null };
+
+describe("/api/auth token checks", () => {
+  it("reports scopes and expiry for a working token", async () => {
+    gitlab({ status: 200, body: ADA }, { status: 200, body: { name: "ci", scopes: ["read_api"], expires_at: "2026-12-01" } });
+    const res = await createApp({ store: makeStore() }).request(req("/api/auth"));
+    expect(await res.json()).toMatchObject({
+      configured: true,
+      token: { name: "ci", scopes: ["read_api"], expiresAt: "2026-12-01" },
+    });
+  });
+
+  it("flags a token GitLab refuses as invalid", async () => {
+    gitlab({ status: 401 }, { status: 401 });
+    const res = await createApp({ store: makeStore() }).request(req("/api/auth"));
+    expect(await res.json()).toMatchObject({ configured: false, source: "env", problem: "invalid" });
+  });
+
+  it("flags a token without api or read_api as a scope problem", async () => {
+    gitlab({ status: 200, body: ADA }, { status: 200, body: { scopes: ["read_user"] } });
+    const res = await createApp({ store: makeStore() }).request(req("/api/auth"));
+    expect(await res.json()).toMatchObject({ configured: false, problem: "scope", token: { scopes: ["read_user"] } });
+  });
+
+  it("tells unreachable GitLab apart from a bad token", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => { throw new TypeError("fetch failed"); }));
+    const res = await createApp({ store: makeStore() }).request(req("/api/auth"));
+    expect(await res.json()).toMatchObject({ configured: false, problem: "unreachable" });
+  });
+
+  it("refuses to save a token that can't read variables, and says why", async () => {
+    vi.stubEnv("GITLAB_TOKEN", "");
+    gitlab({ status: 200, body: ADA }, { status: 200, body: { scopes: ["read_user", "read_repository"] } });
+    const res = await createApp({ store: makeStore() }).request(
+      req("/api/auth", { method: "POST", body: JSON.stringify({ token: "glpat-narrow" }) }),
+    );
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toMatch(/read_user, read_repository.*api scope/);
+    expect(res.headers.get("set-cookie")).toBeNull();
+  });
+
+  it("treats unknown scopes (OAuth tokens) as readable", async () => {
+    gitlab({ status: 200, body: ADA }, { status: 404 });
+    const res = await createApp({ store: makeStore() }).request(req("/api/auth"));
+    expect(await res.json()).toMatchObject({ configured: true, token: { scopes: null } });
   });
 });

@@ -82,11 +82,31 @@ export interface GitLabUser {
 
 export type TokenSource = "env" | "cookie";
 
+/** What GitLab says about the token itself. Unknown fields are null (e.g. OAuth tokens). */
+export interface TokenAccess {
+  name: string | null;
+  scopes: string[] | null;
+  /** ISO date, or null when the token never expires or GitLab didn't say */
+  expiresAt: string | null;
+}
+
+/**
+ * Why a configured token can't be used:
+ * - invalid: GitLab refused it (expired, revoked, mistyped)
+ * - scope: GitLab accepted it, but it lacks the scopes varatlas needs
+ * - unreachable: GitLab couldn't be contacted
+ */
+export type AuthProblem = "invalid" | "scope" | "unreachable";
+
 export interface AuthStatus {
   configured: boolean;
   source: TokenSource | null;
   user?: GitLabUser;
   baseUrl: string;
+  token?: TokenAccess;
+  problem?: AuthProblem;
+  /** the built-in demo org (VARATLAS_DEMO=1): sample data, changes stay in memory */
+  demo?: boolean;
 }
 
 /* API payloads ------------------------------------------------------ */

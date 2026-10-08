@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { distinctScopes, EMPTY_FILTERS, filterRows, keyLocationCounts, toRows } from "./rows";
+import { distinctScopes, filterRows, toRows, type Filters } from "./rows";
 import type { EntityVariables, GitLabVariable } from "@shared/types";
 
 const v = (key: string, over: Partial<GitLabVariable> = {}): GitLabVariable => ({
@@ -47,14 +47,6 @@ const entities: EntityVariables[] = [
 
 const rows = toRows(entities);
 
-describe("keyLocationCounts", () => {
-  it("counts distinct groups/projects, not environment scopes", () => {
-    const counts = keyLocationCounts(rows);
-    expect(counts.get("DB_URL")).toBe(1);
-    expect(counts.get("REGISTRY")).toBe(2);
-  });
-});
-
 describe("distinctScopes", () => {
   it("returns sorted unique scopes", () => {
     expect(distinctScopes(rows)).toEqual(["*", "production", "staging"]);
@@ -62,21 +54,8 @@ describe("distinctScopes", () => {
 });
 
 describe("filterRows", () => {
-  const keys = (f: Partial<typeof EMPTY_FILTERS>) =>
-    filterRows(rows, { ...EMPTY_FILTERS, ...f }).map((r) => `${r.path}:${r.v.key}`);
-
-  it("limits a group selection to its subtree", () => {
-    expect(keys({ selection: { entity: "group", path: "acme" } })).toEqual([
-      "acme:REGISTRY",
-      "acme/api:DB_URL",
-      "acme/api:DB_URL",
-      "acme/api:REGISTRY",
-    ]);
-  });
-
-  it("does not treat a path prefix as a parent", () => {
-    expect(keys({ selection: { entity: "group", path: "acm" } })).toEqual([]);
-  });
+  const none: Filters = { query: "", level: "all", attrs: new Set(), scope: "all", ids: null };
+  const keys = (f: Partial<Filters>) => filterRows(rows, { ...none, ...f }).map((r) => `${r.path}:${r.v.key}`);
 
   it("filters by level, attributes and scope", () => {
     expect(keys({ level: "group" })).toEqual(["acme:REGISTRY"]);

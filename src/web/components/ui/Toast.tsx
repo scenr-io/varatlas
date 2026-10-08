@@ -1,13 +1,10 @@
-
 import { createContext, type ComponentChildren } from "preact";
 import { useCallback, useContext, useState } from "preact/hooks";
-import { CheckCircle2, XCircle } from "lucide-preact";
+import { CircleCheck, CircleX } from "lucide-preact";
 
 type Toast = { id: number; kind: "ok" | "err"; text: string };
 
-const ToastCtx = createContext<(kind: "ok" | "err", text: string) => void>(
-  () => {},
-);
+const ToastCtx = createContext<(kind: "ok" | "err", text: string) => void>(() => {});
 
 export function useToast() {
   return useContext(ToastCtx);
@@ -19,28 +16,28 @@ export function ToastProvider({ children }: { children: ComponentChildren }) {
   const push = useCallback((kind: "ok" | "err", text: string) => {
     const id = Date.now() + Math.random();
     setToasts((t) => [...t, { id, kind, text }]);
-    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 4200);
+    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), kind === "err" ? 7000 : 4000);
   }, []);
 
   return (
     <ToastCtx.Provider value={push}>
       {children}
-      <div className="pointer-events-none fixed bottom-5 right-5 z-[100] flex flex-col gap-2">
+      <div
+        className="pointer-events-none fixed bottom-5 right-5 z-[100] flex flex-col gap-2"
+        role="status"
+        aria-live="polite"
+      >
         {toasts.map((t) => (
           <div
             key={t.id}
-            className={`toast-in pointer-events-auto flex items-center gap-2.5 rounded-xl border px-4 py-3 text-[13px] font-semibold shadow-lg backdrop-blur ${
-              t.kind === "ok"
-                ? "border-pass/25 bg-white/95 text-ink"
-                : "border-accent/25 bg-white/95 text-ink"
-            }`}
+            className="pop-in pointer-events-auto flex max-w-sm items-start gap-2.5 rounded-lg border border-line-strong bg-raised px-4 py-3 text-sm text-fg shadow-xl shadow-black/40"
           >
             {t.kind === "ok" ? (
-              <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-pass" />
+              <CircleCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-good" aria-label="Done" role="img" />
             ) : (
-              <XCircle className="h-4 w-4 flex-shrink-0 text-accent" />
+              <CircleX className="mt-0.5 h-4 w-4 flex-shrink-0 text-critical" aria-label="Error" role="img" />
             )}
-            {t.text}
+            <span>{t.text}</span>
           </div>
         ))}
       </div>

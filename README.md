@@ -10,28 +10,65 @@ groups and hundreds of projects, nobody can answer simple questions any more:
 - What does `production` actually receive, and from which group?
 
 varatlas points at a GitLab token, discovers every group, subgroup and project that
-token can see, and puts every CI/CD variable into one searchable table, with full
-create / edit / delete support for every GitLab field (type, environment scope,
-visibility including masked & hidden, protection, variable expansion, description).
+token can see, and maps every CI/CD variable: where it's defined, what each project
+actually receives, and what needs fixing. You can also create, edit and delete
+variables, with every GitLab field supported.
 
 > Built and maintained by [scenr](https://github.com/scenr-io). Runs entirely on your
 > machine; your token and variables never leave it except to talk to your GitLab.
 
+![The varatlas overview: findings that need attention, and the group hierarchy showing where variables are defined](docs/images/overview.png)
+
+## Try it without a token
+
+Demo mode serves a made-up company with sample data, so you can explore everything
+before connecting your GitLab:
+
+```bash
+git clone https://github.com/scenr-io/varatlas.git && cd varatlas
+docker build -t varatlas .
+docker run --rm -p 127.0.0.1:3131:3131 -e VARATLAS_DEMO=1 varatlas
+# → http://localhost:3131
+```
+
+Changes made in demo mode stay in memory and never reach GitLab.
+
 ## Features
 
-- **Automatic discovery.** Every group, subgroup and project the token can see. No
-  config file listing projects.
-- **Fast.** The whole org loads in a few GraphQL queries instead of one REST call per
-  project; reopening is instant from an in-memory snapshot that refreshes in the background.
-- **One table for the whole org.** Filter by group subtree, project, level, environment
-  scope, protected / masked / file, or free-text search over keys, values and paths.
-  Virtualized, so thousands of variables scroll smoothly.
-- **Duplicate detection.** Keys defined in more than one group or project get a `×N` badge.
-- **Full CRUD.** Every GitLab variable field. Same-key variables in different
-  environment scopes are addressed correctly.
-- **Safe by default.** Values are masked until revealed; masked-and-hidden values are
-  never returned by GitLab and are shown as unreadable.
-- **Tiny.** A ~23 KB web UI and a single-file server. The container image is ~50 MB.
+**Needs attention.** Findings for secrets that aren't masked or protected, the same key
+holding different values in unrelated projects, identical copies that could live on a
+shared parent group, overridden group variables, and places your token can't read. Each
+finding opens the variables behind it.
+
+**The atlas.** Your group hierarchy as bars: how many variables are defined on each group
+(and inherited by everything below) versus further down the tree.
+
+**What a project receives.** Select a project to see its own variables plus everything it
+inherits from parent groups, with replaced values marked.
+
+![A project's variables, including those inherited from its parent groups](docs/images/project-variables.png)
+
+**Track a key everywhere.** The by-key view and key detail show every place a key is
+defined, whether the copies agree, and how many projects each one reaches.
+
+![Every place DATABASE_URL is defined, side by side](docs/images/key-detail.png)
+
+**Clear answers when a token can't do something.** varatlas checks the token's scopes,
+expiry and role, and explains what's missing and how to fix it, instead of showing an
+empty page. Read-only tokens get a read-only view.
+
+![The token check for a token without the scopes varatlas needs](docs/images/token-check.png)
+
+**Also:**
+
+- **Fast.** The org loads in a few GraphQL queries; reopening is instant from an
+  in-memory snapshot that refreshes in the background. Selecting a group or project
+  takes about 1 ms, even with 20,000 variables.
+- **Search and filter** by key, value, path, environment, protection or masking.
+  The table is virtualized, so thousands of variables scroll smoothly.
+- **Safe by default.** Values stay masked until revealed, and masked-and-hidden values
+  are never returned by GitLab.
+- **Tiny.** About 31 KB in the browser, a single-file server, and a ~50 MB container.
 - **Works with gitlab.com and self-managed GitLab.**
 
 ## Quick start
@@ -79,6 +116,7 @@ All settings are optional environment variables (or lines in `.env.local`).
 | `GITLAB_BASE_URL`        | `https://gitlab.com`      | Your GitLab instance.                                                                         |
 | `VARATLAS_EXCLUDE_PATHS` | (none)                    | Comma-separated path segments to skip, e.g. `sandbox,archive`. Matches any segment of a path. |
 | `VARATLAS_ALLOWED_HOSTS` | `localhost,127.0.0.1,::1` | Hostnames the API answers for. See [Security model](#security-model).                         |
+| `VARATLAS_DEMO`          | (none)                    | Set to `1` to serve the built-in demo org instead of GitLab.                                  |
 | `HOST`                   | `127.0.0.1`               | Listen address (`0.0.0.0` in the container image).                                            |
 | `PORT`                   | `3131`                    | Listen port.                                                                                  |
 
@@ -107,7 +145,7 @@ Found a vulnerability? See [SECURITY.md](SECURITY.md).
 ## How it works
 
 ```
-browser (Preact UI, ~23 KB) ──► Hono server (one bundled file)
+browser (Preact UI, ~30 KB) ──► Hono server (one bundled file)
                                  ├─ guards: host / origin / content-type
                                  ├─ snapshot cache (memory, per token)
                                  └─ GitLab: GraphQL for loading, REST for edits
@@ -131,6 +169,9 @@ src/
   web/             Preact + Tailwind UI, built by Vite into dist/public
 ```
 
+For the full picture (request flow, caching, the token model, the web app and design
+decisions) see [docs/architecture.md](docs/architecture.md).
+
 **GitLab notes**
 
 - "Masked and hidden" can only be set at creation (a GitLab rule).
@@ -142,6 +183,7 @@ src/
 pnpm dev          # UI with hot reload + API server → http://localhost:3131
 pnpm check        # lint + typecheck + tests
 pnpm test:watch   # tests in watch mode
+pnpm bench        # time the analysis on a synthetic 20,000-variable org
 pnpm build        # production build → dist/
 ```
 
