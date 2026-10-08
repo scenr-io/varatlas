@@ -67,6 +67,7 @@ describe("helpers", () => {
     expect(looksSecret("GITLAB_TOKEN")).toBe(true);
     expect(looksSecret("SSH_PRIVATE_KEY_B64")).toBe(true);
     expect(looksSecret("SSH_PUBLIC_KEY")).toBe(false);
+    expect(looksSecret("STRIPE_PUBLISHABLE_KEY")).toBe(false);
     expect(looksSecret("AWS_ACCESS_KEY_ID")).toBe(false);
     expect(looksSecret("AWS_DEFAULT_REGION")).toBe(false);
   });
