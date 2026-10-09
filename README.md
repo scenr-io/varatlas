@@ -66,7 +66,7 @@ empty page. Read-only tokens get a read-only view.
   The table is virtualized, so thousands of variables scroll smoothly.
 - **Safe by default.** Values stay masked until revealed, and masked-and-hidden values
   are never returned by GitLab.
-- **Tiny.** About 31 KB in the browser, a single-file server, and a ~50 MB container.
+- **Tiny.** About 31 KB in the browser, a single-file server, and a container that downloads in about 50 MB.
 - **Works with gitlab.com and self-managed GitLab.**
 
 ## Quick start

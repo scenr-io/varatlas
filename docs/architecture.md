@@ -276,7 +276,7 @@ selection only narrows them.
 The Vite proxy keeps the browser's `Host` header (`changeOrigin: false`) so the
 same-origin guard behaves the same in development and production.
 
-**Container.** A distroless Node image running as a non-root user, about 50 MB. It works
+**Container.** A distroless Node image running as a non-root user, about 50 MB to download. It works
 with a read-only filesystem and all capabilities dropped, listens on `0.0.0.0:3131`
 inside the container, and has a health check on `/healthz`. See `Dockerfile` and
 `compose.yaml`.
