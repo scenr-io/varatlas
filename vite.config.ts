@@ -31,6 +31,12 @@ export default defineConfig({
   test: {
     root: ".",
     environment: "node",
-    include: ["src/**/*.test.ts", "test/**/*.test.ts"],
+    include: ["src/**/*.test.{ts,tsx}", "test/**/*.test.{ts,tsx}"],
+    coverage: {
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: ["src/**/*.test.*", "src/web/main.tsx"],
+      // A floor, not a target: set just below what the suite reaches, so coverage can only go up.
+      thresholds: { lines: 80, statements: 78, functions: 75, branches: 70 },
+    },
   },
 });

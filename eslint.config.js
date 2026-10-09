@@ -32,7 +32,7 @@ export default tseslint.config(
   // Tests are exempt: they often inspect raw JSON on purpose.
   {
     files: ["src/**/*.{ts,tsx}"],
-    ignores: ["**/*.test.ts"],
+    ignores: ["**/*.test.{ts,tsx}"],
     rules: {
       "@typescript-eslint/no-unsafe-argument": "error",
       "@typescript-eslint/no-unsafe-assignment": "error",

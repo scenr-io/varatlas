@@ -1,7 +1,8 @@
 /* Shared test helpers: data builders, a fake fetch, and requests to the varatlas app. */
 
 import { vi } from "vitest";
-import type { EntityType, EntityVariables, GitLabVariable } from "../src/shared/types";
+import type { OrgVariablesApi } from "../src/web/hooks/useOrgVariables";
+import type { AuthStatus, EntityType, EntityVariables, GitLabVariable } from "../src/shared/types";
 
 const ORIGIN = "http://localhost:3131";
 
@@ -78,4 +79,36 @@ export function apiRequest(
 export function defined<T>(value: T | null | undefined, what = "value"): T {
   if (value === null || value === undefined) throw new Error(`Expected ${what} to be defined`);
   return value;
+}
+
+/** An OrgVariablesApi (the useOrgVariables result) for component tests; override what matters. */
+export function fakeOrg(over: Partial<OrgVariablesApi> = {}): OrgVariablesApi {
+  return {
+    auth: null,
+    tree: null,
+    entities: null,
+    syncedAt: null,
+    loadError: null,
+    connectionError: null,
+    refreshing: false,
+    start: vi.fn(() => Promise.resolve()),
+    refresh: vi.fn(() => Promise.resolve(null)),
+    createVariable: vi.fn(() => Promise.resolve()),
+    updateVariable: vi.fn(() => Promise.resolve()),
+    deleteVariable: vi.fn(() => Promise.resolve()),
+    disconnect: vi.fn(() => Promise.resolve()),
+    ...over,
+  };
+}
+
+/** An auth status for a connected (or failing) token. */
+export function authStatus(over: Partial<AuthStatus> = {}): AuthStatus {
+  return {
+    configured: true,
+    source: "env",
+    baseUrl: "https://gitlab.com",
+    user: { username: "ada", name: "Ada Lovelace", avatar_url: null },
+    token: { name: "t", scopes: ["api"], expiresAt: null },
+    ...over,
+  };
 }
