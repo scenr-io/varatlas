@@ -153,9 +153,12 @@ export interface Finding {
   detail: string;
   /** the variables this finding is about */
   rowIds: Set<string>;
-  /** headline count and its unit, e.g. 3 "variables" */
+  /** headline count, e.g. 3 */
   count: number;
-  unit: string;
+  /** what `count` counts: variables (rows), distinct keys, or places (paths) */
+  counts: "variables" | "keys" | "places";
+  /** the unit for `count`, singular and plural, e.g. variable / variables */
+  unit: { one: string; many: string };
   /** places involved when there are no rows to show, e.g. unreadable projects */
   paths?: string[];
 }
@@ -187,7 +190,8 @@ export function findFindings(rows: Row[], entities: EntityVariables[]): Finding[
     detail: "Their values can show up in job logs. Mark them masked, or masked and hidden.",
     rowIds: ids(unmasked),
     count: unmasked.length,
-    unit: unmasked.length === 1 ? "variable" : "variables",
+    counts: "variables",
+    unit: { one: "variable", many: "variables" },
   });
 
   const unprotected = secrets.filter((r) => !r.v.protected);
@@ -199,7 +203,8 @@ export function findFindings(rows: Row[], entities: EntityVariables[]): Finding[
       "Unprotected variables reach pipelines on any branch, including merge requests. Protect them unless feature branches need them.",
     rowIds: ids(unprotected),
     count: unprotected.length,
-    unit: unprotected.length === 1 ? "variable" : "variables",
+    counts: "variables",
+    unit: { one: "variable", many: "variables" },
   });
 
   const copies = unrelatedCopies(rows);
@@ -212,7 +217,8 @@ export function findFindings(rows: Row[], entities: EntityVariables[]): Finding[
       "The same key and environment hold different values in unrelated places. Check they're meant to differ.",
     rowIds: ids(drift.flatMap((c) => c.rows)),
     count: drift.length,
-    unit: drift.length === 1 ? "key" : "keys",
+    counts: "keys",
+    unit: { one: "key", many: "keys" },
   });
 
   const unreadable = entities.filter((e) => e.error);
@@ -223,7 +229,8 @@ export function findFindings(rows: Row[], entities: EntityVariables[]): Finding[
     detail: "Reading variables needs the Maintainer role. Anything defined here is missing from every view.",
     rowIds: new Set(),
     count: unreadable.length,
-    unit: unreadable.length === 1 ? "group or project" : "groups and projects",
+    counts: "places",
+    unit: { one: "group or project", many: "groups and projects" },
     paths: unreadable.map((e) => e.path),
   });
 
@@ -236,7 +243,8 @@ export function findFindings(rows: Row[], entities: EntityVariables[]): Finding[
       "Identical values defined separately. Defining them once on a common parent group keeps them in sync.",
     rowIds: ids(shared.flatMap((c) => c.rows)),
     count: shared.length,
-    unit: shared.length === 1 ? "key" : "keys",
+    counts: "keys",
+    unit: { one: "key", many: "keys" },
   });
 
   const groupRowsByKey = groupBy(
@@ -256,10 +264,36 @@ export function findFindings(rows: Row[], entities: EntityVariables[]): Finding[
       "A subgroup or project redefines a variable it would otherwise inherit. Intended overrides are fine; accidental ones cause surprises.",
     rowIds: ids(overrides),
     count: overrides.length,
-    unit: overrides.length === 1 ? "override" : "overrides",
+    counts: "variables",
+    unit: { one: "override", many: "overrides" },
   });
 
   return findings.filter((f) => f.count > 0);
+}
+
+/** The unit for a finding's current count: "1 variable", "3 variables". */
+export function findingUnit(f: Finding): string {
+  return f.count === 1 ? f.unit.one : f.unit.many;
+}
+
+/**
+ * Narrow an org-wide finding to what's in view: the given rows, or the places a path
+ * test accepts. Findings are computed for the whole org because drift and overrides
+ * need the full picture; a selection only narrows them.
+ */
+export function narrowFinding(
+  f: Finding,
+  inView: Map<string, Row>,
+  pathInView: (p: string) => boolean,
+): Finding {
+  if (f.counts === "places") {
+    const paths = (f.paths ?? []).filter(pathInView);
+    return { ...f, paths, count: paths.length };
+  }
+  const rowIds = new Set([...f.rowIds].filter((id) => inView.has(id)));
+  const count =
+    f.counts === "keys" ? new Set([...rowIds].map((id) => inView.get(id)?.v.key)).size : rowIds.size;
+  return { ...f, rowIds, count };
 }
 
 /* ------------------------------------------------------------------ */

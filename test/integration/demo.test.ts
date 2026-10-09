@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 /*
  * Integration: the demo org must exercise every finding the web app knows about,
  * and the demo backend must behave like GitLab through the real HTTP app.
@@ -48,12 +48,14 @@ describe("demo org", () => {
 });
 
 describe("demo backend", () => {
-  afterEach(() => vi.unstubAllEnvs());
-
   function app() {
-    vi.stubEnv("GITLAB_TOKEN", "demo");
     const demo = createDemo();
-    return createApp({ store: createSnapshotStore(demo.fetchOrg), backend: demo.backend, demo: true });
+    return createApp({
+      store: createSnapshotStore(demo.fetchOrg),
+      backend: demo.backend,
+      demo: true,
+      getServerToken: () => "demo",
+    });
   }
 
   it("reports demo mode and a full-access token", async () => {

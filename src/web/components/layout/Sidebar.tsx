@@ -60,7 +60,7 @@ function Count({ n }: { n: number }) {
   return <span className="ml-auto pl-2 text-xs tabular-nums text-fg-3">{n}</span>;
 }
 
-export default function Sidebar({
+export function Sidebar({
   tree,
   varCounts,
   selection,

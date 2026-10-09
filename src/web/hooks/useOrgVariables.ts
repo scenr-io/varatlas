@@ -127,3 +127,4 @@ export function useOrgVariables() {
     disconnect,
   };
 }
+export type OrgVariablesApi = ReturnType<typeof useOrgVariables>;

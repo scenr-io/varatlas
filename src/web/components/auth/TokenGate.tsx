@@ -5,7 +5,8 @@ import { ScenrCredit } from "@/components/ui/ScenrCredit";
 import { useAutoFocus } from "@/hooks/useAutoFocus";
 import { api } from "@/api";
 
-export default function TokenGate({
+/** The first screen: paste a GitLab token. */
+export function TokenGate({
   baseUrl,
   onConnected,
   notice,

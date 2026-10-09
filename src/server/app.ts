@@ -9,7 +9,7 @@ import type { AuthProblem, AuthStatus } from "../shared/types";
 import { isSameVariable } from "../shared/variables";
 import { clearTokenCookie, requireToken, resolveToken, setTokenCookie } from "./auth";
 import { gitlabBackend, type Backend } from "./backend";
-import { allowedHosts } from "./config";
+import { allowedHosts, serverToken } from "./config";
 import { GitLabError } from "./gitlab/client";
 import { canReadVariables } from "./gitlab/user";
 import { HttpError } from "./http";
@@ -61,12 +61,15 @@ export function createApp({
   publicDir,
   backend = gitlabBackend,
   demo = false,
+  getServerToken = serverToken,
 }: {
   store: SnapshotStore;
   publicDir?: string;
   /** where variables come from; the built-in demo org when `demo` is set */
   backend?: Backend;
   demo?: boolean;
+  /** the server-side token (GITLAB_TOKEN, or the demo token); read per request so tests can change it */
+  getServerToken?: () => string | null;
 }) {
   const { whoAmI, tokenAccess, createVariable, updateVariable, deleteVariable } = backend;
   const gitlabBaseUrl = () => backend.baseUrl();
@@ -109,7 +112,7 @@ export function createApp({
   /** GET /api/auth: is a token configured, does GitLab accept it, and what may it do? */
   app.get("/api/auth", async (c) => {
     const baseUrl = gitlabBaseUrl();
-    const { token, source } = resolveToken(c);
+    const { token, source } = resolveToken(c, getServerToken());
     if (!token) return c.json<AuthStatus>({ configured: false, source: null, baseUrl });
 
     const [user, access] = await Promise.allSettled([whoAmI(token), tokenAccess(token)]);
@@ -169,7 +172,7 @@ export function createApp({
   });
 
   app.delete("/api/auth", (c) => {
-    const { token, source } = resolveToken(c);
+    const { token, source } = resolveToken(c, getServerToken());
     if (token && source === "cookie") store.drop(token);
     clearTokenCookie(c);
     return c.json({ ok: true });
@@ -177,7 +180,7 @@ export function createApp({
 
   /** ?refresh=1 forces a reload from GitLab; otherwise the cached snapshot is returned. */
   app.get("/api/variables", async (c) => {
-    const token = requireToken(c);
+    const token = requireToken(c, getServerToken());
     const snapshot = await store
       .get(token, { fresh: c.req.query("refresh") === "1" })
       .catch((e) => explainForbidden(e, "read"));
@@ -185,7 +188,7 @@ export function createApp({
   });
 
   app.post("/api/variables", async (c) => {
-    const token = requireToken(c);
+    const token = requireToken(c, getServerToken());
     const { entity, id, draft } = parseCreateRequest(await readJson(c.req.raw));
     const variable = await createVariable(token, { entity, id }, draft).catch((e) =>
       explainForbidden(e, "change"),
@@ -195,7 +198,7 @@ export function createApp({
   });
 
   app.put("/api/variables", async (c) => {
-    const token = requireToken(c);
+    const token = requireToken(c, getServerToken());
     const { entity, id, key, scope, changes } = parseUpdateRequest(await readJson(c.req.raw));
     const variable = await updateVariable(token, { entity, id }, key, scope, changes).catch((e) =>
       explainForbidden(e, "change"),
@@ -207,7 +210,7 @@ export function createApp({
   });
 
   app.delete("/api/variables", async (c) => {
-    const token = requireToken(c);
+    const token = requireToken(c, getServerToken());
     const { entity, id, key, scope } = parseDeleteRequest(await readJson(c.req.raw));
     await deleteVariable(token, { entity, id }, key, scope).catch((e) => explainForbidden(e, "change"));
     store.patch(token, { entity, id }, (vars) => vars.filter((v) => !isSameVariable(key, scope)(v)));

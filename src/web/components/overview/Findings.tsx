@@ -1,6 +1,6 @@
 import { ChevronRight, CircleCheck } from "lucide-preact";
 import { SeverityIcon } from "@/components/ui/Badge";
-import type { Finding } from "@/insights";
+import { findingUnit, type Finding } from "@/insights";
 
 const SHOWN_PATHS = 3;
 
@@ -42,7 +42,7 @@ export function Findings({ findings, onOpen }: { findings: Finding[]; onOpen: (f
             </div>
             <div className="flex-shrink-0 text-right">
               <p className="text-xl font-semibold leading-none text-fg">{f.count}</p>
-              <p className="mt-1 text-xs text-fg-3">{f.unit}</p>
+              <p className="mt-1 text-xs text-fg-3">{findingUnit(f)}</p>
             </div>
           </>
         );
@@ -52,7 +52,7 @@ export function Findings({ findings, onOpen }: { findings: Finding[]; onOpen: (f
               <button
                 onClick={() => onOpen(f)}
                 className="group flex w-full items-start gap-3 py-4 text-left transition-colors hover:bg-surface/60"
-                aria-label={`${f.title}: ${f.count} ${f.unit}. Show them.`}
+                aria-label={`${f.title}: ${f.count} ${findingUnit(f)}. Show them.`}
               >
                 {body}
                 <ChevronRight

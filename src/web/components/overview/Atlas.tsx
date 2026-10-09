@@ -1,11 +1,7 @@
 import { useState } from "preact/hooks";
 import { pct, plural, px } from "@/format";
 import type { GroupStat } from "@/insights";
-
-export interface AtlasLabels {
-  first: string;
-  second: string;
-}
+import type { AtlasCopy } from "@/overview";
 
 /** What the readout says about one row. */
 function describe(s: GroupStat): string {
@@ -29,7 +25,7 @@ export function Atlas({
   onSelect,
 }: {
   stats: GroupStat[];
-  labels: AtlasLabels;
+  labels: AtlasCopy["labels"];
   onSelect: (groupId: number) => void;
 }) {
   const shown = stats.filter((s) => s.own + s.inSubgroups + s.inProjects > 0);

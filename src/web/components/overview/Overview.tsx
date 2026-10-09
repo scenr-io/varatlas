@@ -1,17 +1,13 @@
-import type { Finding, GroupStat, KeySummary, Posture } from "@/insights";
-import { Atlas, type AtlasLabels } from "./Atlas";
+/* The overview: findings, the atlas, and the protection, environment and key breakdowns. */
+
+import type { Finding } from "@/insights";
+import type { OverviewModel } from "@/overview";
+import { Atlas } from "./Atlas";
 import { ProtectionMeters, RepeatedKeys, ScopeBars, Section } from "./Breakdowns";
 import { Findings } from "./Findings";
 
-interface Props {
-  headline: string;
-  subline: string;
+interface Props extends OverviewModel {
   findings: Finding[];
-  stats: GroupStat[];
-  atlas: { title: string; note: string; labels: AtlasLabels };
-  posture: Posture;
-  scopes: { scope: string; count: number }[];
-  keys: KeySummary[];
   onFinding: (f: Finding) => void;
   onGroup: (groupId: number) => void;
   onScope: (scope: string) => void;
