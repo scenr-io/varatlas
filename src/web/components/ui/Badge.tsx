@@ -38,7 +38,13 @@ const SEVERITY = {
 } as const;
 
 /** Status is never color alone: every severity has its own icon and an accessible label. */
-export function SeverityIcon({ severity, className = "h-4 w-4" }: { severity: Severity; className?: string }) {
+export function SeverityIcon({
+  severity,
+  className = "h-4 w-4",
+}: {
+  severity: Severity;
+  className?: string;
+}) {
   const { Icon, className: tone, label } = SEVERITY[severity];
   return <Icon className={`${className} flex-shrink-0 ${tone}`} aria-label={label} role="img" />;
 }

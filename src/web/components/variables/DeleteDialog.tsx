@@ -22,7 +22,8 @@ export function DeleteDialog({
     return () => window.removeEventListener("keydown", onKey);
   }, [onCancel]);
 
-  const scope = row.v.environment_scope === "*" ? "all environments" : `the ${row.v.environment_scope} environment`;
+  const scope =
+    row.v.environment_scope === "*" ? "all environments" : `the ${row.v.environment_scope} environment`;
 
   return (
     <div className="fixed inset-0 z-[60] grid place-items-center p-6">

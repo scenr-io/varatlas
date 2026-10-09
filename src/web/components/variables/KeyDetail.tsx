@@ -48,7 +48,9 @@ export function KeyDetail({
     rows.flatMap((r) =>
       r.entity === "project"
         ? [r.path]
-        : tree.projects.filter((p) => p.path_with_namespace.startsWith(r.path + "/")).map((p) => p.path_with_namespace),
+        : tree.projects
+            .filter((p) => p.path_with_namespace.startsWith(r.path + "/"))
+            .map((p) => p.path_with_namespace),
     ),
   ).size;
 
@@ -68,7 +70,8 @@ export function KeyDetail({
             </h2>
             <p className="mt-1.5 text-sm text-fg-2">
               Defined in {summary.locations} {summary.locations === 1 ? "place" : "places"}, reaching{" "}
-              {totalReach} {totalReach === 1 ? "project" : "projects"}. {summary.locations > 1 && VALUES[summary.values]}
+              {totalReach} {totalReach === 1 ? "project" : "projects"}.{" "}
+              {summary.locations > 1 && VALUES[summary.values]}
             </p>
             {summary.secret && !summary.maskedAll && (
               <p className="mt-2">
@@ -110,26 +113,28 @@ export function KeyDetail({
                         ? `Group variable, inherited by ${n} ${n === 1 ? "project" : "projects"}`
                         : "Project variable"}
                       {", "}
-                      {r.v.environment_scope === "*" ? "all environments" : `environment ${r.v.environment_scope}`}
+                      {r.v.environment_scope === "*"
+                        ? "all environments"
+                        : `environment ${r.v.environment_scope}`}
                     </p>
                   </div>
                   {!readOnly && (
-                  <div className="flex flex-shrink-0 gap-0.5">
-                    <button
-                      onClick={() => onEdit(r)}
-                      aria-label={`Edit ${summary.key} in ${r.path}`}
-                      className="rounded-md p-1.5 text-fg-3 transition-colors hover:bg-surface hover:text-fg"
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      onClick={() => onDelete(r)}
-                      aria-label={`Delete ${summary.key} from ${r.path}`}
-                      className="rounded-md p-1.5 text-fg-3 transition-colors hover:bg-critical/15 hover:text-critical"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
+                    <div className="flex flex-shrink-0 gap-0.5">
+                      <button
+                        onClick={() => onEdit(r)}
+                        aria-label={`Edit ${summary.key} in ${r.path}`}
+                        className="rounded-md p-1.5 text-fg-3 transition-colors hover:bg-surface hover:text-fg"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => onDelete(r)}
+                        aria-label={`Delete ${summary.key} from ${r.path}`}
+                        className="rounded-md p-1.5 text-fg-3 transition-colors hover:bg-critical/15 hover:text-critical"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   )}
                 </div>
                 <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -145,15 +150,15 @@ export function KeyDetail({
         </ul>
 
         {!readOnly && (
-        <div className="border-t border-line px-6 py-4">
-          <button
-            onClick={() => onAdd(summary.key)}
-            className="flex items-center gap-1.5 rounded-lg border border-line-strong px-3.5 py-2 text-sm font-medium text-fg transition-colors hover:bg-surface"
-          >
-            <Plus className="h-4 w-4" aria-hidden="true" />
-            Add {summary.key} somewhere else
-          </button>
-        </div>
+          <div className="border-t border-line px-6 py-4">
+            <button
+              onClick={() => onAdd(summary.key)}
+              className="flex items-center gap-1.5 rounded-lg border border-line-strong px-3.5 py-2 text-sm font-medium text-fg transition-colors hover:bg-surface"
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              Add {summary.key} somewhere else
+            </button>
+          </div>
         )}
       </div>
     </div>

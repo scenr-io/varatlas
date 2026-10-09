@@ -10,9 +10,7 @@
  *    send without a CORS preflight.
  */
 
-export type GuardResult =
-  | { ok: true }
-  | { ok: false; status: number; error: string };
+export type GuardResult = { ok: true } | { ok: false; status: number; error: string };
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 

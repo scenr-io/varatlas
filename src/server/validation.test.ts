@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { HttpError } from "./http";
-import {
-  parseCreateRequest,
-  parseDeleteRequest,
-  parseTokenRequest,
-  parseUpdateRequest,
-} from "./validation";
+import { parseCreateRequest, parseDeleteRequest, parseTokenRequest, parseUpdateRequest } from "./validation";
 
 const draft = {
   key: "API_KEY",
@@ -54,9 +49,7 @@ describe("parseUpdateRequest", () => {
   });
 
   it("requires a scope", () => {
-    rejects(() =>
-      parseUpdateRequest({ entity: "group", id: 3, key: "API_KEY", scope: " ", changes: {} }),
-    );
+    rejects(() => parseUpdateRequest({ entity: "group", id: 3, key: "API_KEY", scope: " ", changes: {} }));
   });
 });
 

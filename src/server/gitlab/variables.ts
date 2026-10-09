@@ -26,17 +26,11 @@ function variablePath(target: EntityRef, key: string, scope: string): string {
   );
 }
 
-export function listVariables(
-  token: string,
-  target: EntityRef,
-): Promise<GitLabVariable[]> {
+export function listVariables(token: string, target: EntityRef): Promise<GitLabVariable[]> {
   return glPaginated<GitLabVariable>(token, `${entityBase(target)}/variables`);
 }
 
-export function fetchAllVariables(
-  token: string,
-  tree: OrgTree,
-): Promise<EntityVariables[]> {
+export function fetchAllVariables(token: string, tree: OrgTree): Promise<EntityVariables[]> {
   const targets: Omit<EntityVariables, "variables">[] = [
     ...tree.groups.map((g) => ({
       entity: "group" as EntityType,

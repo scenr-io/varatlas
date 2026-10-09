@@ -15,7 +15,10 @@ export function AccessBanner({
 }) {
   if (!readOnly && expiresInDays === null && !demo) return null;
   return (
-    <div className="flex flex-col gap-1.5 border-b border-line bg-surface px-4 py-2.5 text-[13px] md:px-8" role="status">
+    <div
+      className="flex flex-col gap-1.5 border-b border-line bg-surface px-4 py-2.5 text-[13px] md:px-8"
+      role="status"
+    >
       {demo && (
         <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-fg-2">
           <FlaskConical className="h-4 w-4 flex-shrink-0 text-fg" aria-hidden="true" />

@@ -3,13 +3,7 @@
  * handful of GraphQL queries per root group instead of one REST call per group/project.
  */
 
-import type {
-  EntityVariables,
-  GitLabVariable,
-  OrgTree,
-  TreeGroup,
-  TreeProject,
-} from "../../shared/types";
+import type { EntityVariables, GitLabVariable, OrgTree, TreeGroup, TreeProject } from "../../shared/types";
 import { excludedSegments } from "../config";
 import { pooled } from "../pooled";
 import { glGraphQL } from "./client";
@@ -97,7 +91,7 @@ async function allPages<N>(
   fetchPage: (after: string | null) => Promise<{ nodes: N[]; pageInfo: PageInfo } | null>,
 ): Promise<N[]> {
   const out: N[] = [];
-  for (let after: string | null = null; ; ) {
+  for (let after: string | null = null; ;) {
     const page = await fetchPage(after);
     if (!page) break;
     out.push(...page.nodes);

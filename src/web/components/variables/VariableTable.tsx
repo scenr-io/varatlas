@@ -126,24 +126,24 @@ function VariableRow({
       </td>
       <td className="whitespace-nowrap px-3 text-right">
         {!readOnly && (
-        <div className="flex justify-end gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
-          <button
-            onClick={() => onEdit(r)}
-            title={r.inheritedFrom ? `Edit in ${r.inheritedFrom}` : "Edit"}
-            aria-label={`Edit ${r.v.key} in ${r.path}`}
-            className="rounded-md p-2 text-fg-3 transition-colors hover:bg-raised hover:text-fg"
-          >
-            <Pencil className="h-3.5 w-3.5" />
-          </button>
-          <button
-            onClick={() => onDelete(r)}
-            title={r.inheritedFrom ? `Delete from ${r.inheritedFrom}` : "Delete"}
-            aria-label={`Delete ${r.v.key} from ${r.path}`}
-            className="rounded-md p-2 text-fg-3 transition-colors hover:bg-critical/15 hover:text-critical"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
-        </div>
+          <div className="flex justify-end gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+            <button
+              onClick={() => onEdit(r)}
+              title={r.inheritedFrom ? `Edit in ${r.inheritedFrom}` : "Edit"}
+              aria-label={`Edit ${r.v.key} in ${r.path}`}
+              className="rounded-md p-2 text-fg-3 transition-colors hover:bg-raised hover:text-fg"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={() => onDelete(r)}
+              title={r.inheritedFrom ? `Delete from ${r.inheritedFrom}` : "Delete"}
+              aria-label={`Delete ${r.v.key} from ${r.path}`}
+              className="rounded-md p-2 text-fg-3 transition-colors hover:bg-critical/15 hover:text-critical"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
         )}
       </td>
     </tr>

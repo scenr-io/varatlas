@@ -40,9 +40,7 @@ export interface VariableDraft {
 }
 
 /** Fields that can change on an existing variable. The key cannot. */
-export type VariableChanges = Partial<
-  Omit<VariableDraft, "key" | "masked_and_hidden">
->;
+export type VariableChanges = Partial<Omit<VariableDraft, "key" | "masked_and_hidden">>;
 
 export interface TreeGroup {
   id: number;

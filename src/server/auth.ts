@@ -27,10 +27,7 @@ export function requireToken(c: Context): string {
 }
 
 function isHttps(c: Context): boolean {
-  return (
-    new URL(c.req.url).protocol === "https:" ||
-    c.req.header("x-forwarded-proto") === "https"
-  );
+  return new URL(c.req.url).protocol === "https:" || c.req.header("x-forwarded-proto") === "https";
 }
 
 export function setTokenCookie(c: Context, token: string) {

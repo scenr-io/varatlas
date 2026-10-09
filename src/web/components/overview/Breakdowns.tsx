@@ -49,7 +49,13 @@ export function ProtectionMeters({ posture }: { posture: Posture }) {
               {n} <span className="text-fg-3">of {posture.total}</span>
             </span>
           </div>
-          <div className="mt-1.5 h-2 rounded-r bg-track" role="meter" aria-valuenow={n} aria-valuemax={posture.total} aria-label={label}>
+          <div
+            className="mt-1.5 h-2 rounded-r bg-track"
+            role="meter"
+            aria-valuenow={n}
+            aria-valuemax={posture.total}
+            aria-label={label}
+          >
             <div className="h-2 rounded-r bg-series-1" style={{ width: pct(n, posture.total) }} />
           </div>
         </li>
@@ -95,7 +101,9 @@ export function ScopeBars({
             className="grid w-full grid-cols-[minmax(0,7.5rem)_minmax(0,1fr)_2rem] items-center gap-3 rounded-md px-1 py-1 text-left transition-colors hover:bg-raised/60"
             aria-label={`${s.count} variables in ${s.scope === "*" ? "all environments" : s.scope}. Show them.`}
           >
-            <span className="truncate font-mono text-xs text-fg-2">{s.scope === "*" ? "* (all)" : s.scope}</span>
+            <span className="truncate font-mono text-xs text-fg-2">
+              {s.scope === "*" ? "* (all)" : s.scope}
+            </span>
             <Bar value={s.count} max={max} />
             <span className="text-right text-xs tabular-nums text-fg-2">{s.count}</span>
           </button>

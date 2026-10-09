@@ -18,11 +18,32 @@ function syntheticOrg(groups: number, projects: number, vars: number) {
   }
   for (let i = 0; i < projects; i++) {
     const g = tree.groups[i % groups];
-    tree.projects.push({ id: 10_000 + i, name: `p${i}`, path_with_namespace: `${g.full_path}/p${i}`, namespace_id: g.id, web_url: "", archived: false });
+    tree.projects.push({
+      id: 10_000 + i,
+      name: `p${i}`,
+      path_with_namespace: `${g.full_path}/p${i}`,
+      namespace_id: g.id,
+      web_url: "",
+      archived: false,
+    });
   }
   const entities: EntityVariables[] = [
-    ...tree.groups.map((g) => ({ entity: "group" as const, id: g.id, path: g.full_path, name: g.name, web_url: "", variables: [] })),
-    ...tree.projects.map((p) => ({ entity: "project" as const, id: p.id, path: p.path_with_namespace, name: p.name, web_url: "", variables: [] })),
+    ...tree.groups.map((g) => ({
+      entity: "group" as const,
+      id: g.id,
+      path: g.full_path,
+      name: g.name,
+      web_url: "",
+      variables: [],
+    })),
+    ...tree.projects.map((p) => ({
+      entity: "project" as const,
+      id: p.id,
+      path: p.path_with_namespace,
+      name: p.name,
+      web_url: "",
+      variables: [],
+    })),
   ] as EntityVariables[];
   for (let i = 0; i < vars; i++) {
     entities[(i * 7919) % entities.length].variables.push({

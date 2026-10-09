@@ -29,9 +29,7 @@ async function request(token: string, url: string, init?: RequestInit): Promise<
       cache: "no-store",
     });
     if (res.status !== 429 || attempt >= MAX_RETRIES) return res;
-    await new Promise((r) =>
-      setTimeout(r, retryDelayMs(res.headers.get("retry-after"), attempt)),
-    );
+    await new Promise((r) => setTimeout(r, retryDelayMs(res.headers.get("retry-after"), attempt)));
   }
 }
 

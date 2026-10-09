@@ -34,7 +34,15 @@ import {
   type Finding,
   type GroupStat,
 } from "@/insights";
-import { distinctScopes, filterRows, rowId, toRows, type AttrFilter, type LevelFilter, type Row } from "@/rows";
+import {
+  distinctScopes,
+  filterRows,
+  rowId,
+  toRows,
+  type AttrFilter,
+  type LevelFilter,
+  type Row,
+} from "@/rows";
 import type { EntityRef, GitLabVariable, OrgTree, VariableChanges, VariableDraft } from "@shared/types";
 
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
@@ -153,7 +161,9 @@ export default function Dashboard() {
     if (!tree || !entities) return null;
     const live = scoped.filter((r) => !r.overriddenBy);
     const places = new Set(live.map((r) => `${r.entity}:${r.entityId}`)).size;
-    const attention = findings.length ? `${plural(findings.length, "finding")} to review.` : "Nothing needs attention.";
+    const attention = findings.length
+      ? `${plural(findings.length, "finding")} to review.`
+      : "Nothing needs attention.";
     let headline: string;
     let subline: string;
     if (!selected) {
@@ -170,7 +180,9 @@ export default function Dashboard() {
       headline = `${selected.name} receives ${plural(live.length, "variable")}`;
       subline =
         `${live.length - inherited.length} of its own and ${inherited.length} inherited from ${plural(groups, "parent group")}` +
-        (replaced ? `. ${plural(replaced, "inherited variable is", "inherited variables are")} replaced by nearer ones` : "") +
+        (replaced
+          ? `. ${plural(replaced, "inherited variable is", "inherited variables are")} replaced by nearer ones`
+          : "") +
         `. ${attention}`;
     }
     let stats: GroupStat[];
@@ -209,7 +221,10 @@ export default function Dashboard() {
       atlas = {
         title: "Where variables are defined",
         note: "Variables on a group reach every project below it. Select a group to focus on it.",
-        labels: { first: "Defined on the group, inherited below", second: "Defined in its subgroups and projects" },
+        labels: {
+          first: "Defined on the group, inherited below",
+          second: "Defined in its subgroups and projects",
+        },
       };
     }
     return {
@@ -262,7 +277,12 @@ export default function Dashboard() {
   }
 
   function openEdit(r: Row) {
-    setDrawer({ mode: "edit", target: { entity: r.entity, id: r.entityId }, targetPath: r.path, original: r.v });
+    setDrawer({
+      mode: "edit",
+      target: { entity: r.entity, id: r.entityId },
+      targetPath: r.path,
+      original: r.v,
+    });
   }
 
   async function submitDrawer(target: EntityRef, draft: VariableDraft) {
@@ -412,8 +432,8 @@ export default function Dashboard() {
         }
       >
         <p>
-          You can see {plural(access.paths.length, "group or project", "groups and projects")}, but GitLab only shows
-          CI/CD variables to Maintainers and Owners, and your role is lower in all of them.
+          You can see {plural(access.paths.length, "group or project", "groups and projects")}, but GitLab
+          only shows CI/CD variables to Maintainers and Owners, and your role is lower in all of them.
         </p>
         <p>Ask an Owner to make you a Maintainer, or connect a token from an account that already is one.</p>
         {auth.source === "env" && <EnvTokenFix />}
@@ -430,8 +450,8 @@ export default function Dashboard() {
         }
       >
         <p>
-          varatlas starts from the groups your account belongs to on {new URL(auth.baseUrl).host}, and this account
-          has none. Join a group, or connect a token from an account that is a member of one.
+          varatlas starts from the groups your account belongs to on {new URL(auth.baseUrl).host}, and this
+          account has none. Join a group, or connect a token from an account that is a member of one.
         </p>
       </AccessProblem>
     ) : null;
@@ -470,13 +490,13 @@ export default function Dashboard() {
       <p className="font-medium text-fg">No variables here yet</p>
       <p className="mt-1 text-sm text-fg-2">Variables you add to this group or project show up here.</p>
       {!readOnly && (
-      <button
-        onClick={() => openCreate()}
-        className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-ink hover:opacity-90"
-      >
-        <Plus className="h-4 w-4" aria-hidden="true" />
-        Add variable
-      </button>
+        <button
+          onClick={() => openCreate()}
+          className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-ink hover:opacity-90"
+        >
+          <Plus className="h-4 w-4" aria-hidden="true" />
+          Add variable
+        </button>
       )}
     </>
   );

@@ -2,7 +2,14 @@ import type { ComponentChildren } from "preact";
 import { useEffect, useMemo, useState } from "preact/hooks";
 import { Loader2, X } from "lucide-preact";
 import { useAutoFocus } from "@/hooks/useAutoFocus";
-import type { EntityRef, EntityType, GitLabVariable, OrgTree, VariableDraft, VariableType } from "@shared/types";
+import type {
+  EntityRef,
+  EntityType,
+  GitLabVariable,
+  OrgTree,
+  VariableDraft,
+  VariableType,
+} from "@shared/types";
 
 export interface DrawerState {
   mode: "create" | "edit";
@@ -301,12 +308,16 @@ export default function VariableDrawer({ state, tree, busy, onClose, onSubmit }:
                   />
                 }
               >
-                Treats <span className="font-mono text-fg-2">$NAME</span> in the value as a reference to another
-                variable.
+                Treats <span className="font-mono text-fg-2">$NAME</span> in the value as a reference to
+                another variable.
               </Choice>
               <div>
                 <span className="mb-2 mt-4 block text-[13px] font-medium text-fg">Type</span>
-                <div className="flex overflow-hidden rounded-md border border-line" role="group" aria-label="Type">
+                <div
+                  className="flex overflow-hidden rounded-md border border-line"
+                  role="group"
+                  aria-label="Type"
+                >
                   {(
                     [
                       ["env_var", "Environment variable"],
@@ -326,7 +337,9 @@ export default function VariableDrawer({ state, tree, busy, onClose, onSubmit }:
                     </button>
                   ))}
                 </div>
-                <p className={hint}>A file variable writes the value to a temporary file and holds its path.</p>
+                <p className={hint}>
+                  A file variable writes the value to a temporary file and holds its path.
+                </p>
               </div>
             </div>
           </fieldset>

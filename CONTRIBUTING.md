@@ -28,7 +28,6 @@ CI runs the same commands and also builds and smoke-tests the Docker image.
 
 Start with [docs/architecture.md](docs/architecture.md). In short:
 
-
 - `src/server/`: the Hono server. Anything that touches the GitLab token belongs here.
   esbuild bundles it into `dist/server/index.mjs`.
 - `src/web/`: the Preact UI. It runs in the browser: keep it free of secrets and Node APIs.

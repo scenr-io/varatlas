@@ -200,7 +200,9 @@ export default function Sidebar({
           </div>
         )}
         <div className="min-w-0">
-          <p className="truncate text-[13px] font-medium leading-tight text-fg">{user?.name || "Unknown user"}</p>
+          <p className="truncate text-[13px] font-medium leading-tight text-fg">
+            {user?.name || "Unknown user"}
+          </p>
           {user?.username && <p className="truncate font-mono text-[11px] text-fg-3">@{user.username}</p>}
         </div>
         {canLogout && (

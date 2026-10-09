@@ -33,7 +33,9 @@ export function ValueCell({ v, revealAll }: { v: GitLabVariable; revealAll: bool
   return (
     <div className="group/val flex min-w-0 items-center gap-1">
       <span className={`truncate font-mono text-xs ${visible ? "text-fg" : "text-fg-3"}`}>
-        {visible ? v.value || <span className="italic text-fg-3">empty</span> : "•".repeat(Math.min(Math.max(v.value?.length ?? 8, 6), 14))}
+        {visible
+          ? v.value || <span className="italic text-fg-3">empty</span>
+          : "•".repeat(Math.min(Math.max(v.value?.length ?? 8, 6), 14))}
       </span>
       {!revealAll && (
         <button

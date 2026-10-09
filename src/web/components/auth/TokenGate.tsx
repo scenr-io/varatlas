@@ -39,12 +39,15 @@ export default function TokenGate({
       <div className="w-full max-w-[400px]">
         <h1 className="font-display text-5xl leading-none text-fg">varatlas</h1>
         <p className="mt-3 text-[15px] leading-relaxed text-fg-2">
-          Every CI/CD variable in your GitLab org, on one map: where it's defined, what each
-          project inherits, and what needs fixing.
+          Every CI/CD variable in your GitLab org, on one map: where it's defined, what each project inherits,
+          and what needs fixing.
         </p>
 
         {notice && (
-          <p className="mt-6 rounded-lg border border-line-strong px-4 py-3 text-sm leading-relaxed text-fg" role="alert">
+          <p
+            className="mt-6 rounded-lg border border-line-strong px-4 py-3 text-sm leading-relaxed text-fg"
+            role="alert"
+          >
             {notice}
           </p>
         )}
@@ -82,8 +85,8 @@ export default function TokenGate({
             <ShieldCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-good" aria-hidden="true" />
             <span>
               Use the <code className="font-mono text-fg-2">api</code> scope, or{" "}
-              <code className="font-mono text-fg-2">read_api</code> to browse without editing. The token
-              stays on this server in an httpOnly cookie.
+              <code className="font-mono text-fg-2">read_api</code> to browse without editing. The token stays
+              on this server in an httpOnly cookie.
             </span>
           </p>
         </form>

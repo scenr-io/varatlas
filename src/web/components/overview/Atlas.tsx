@@ -95,7 +95,9 @@ export function Atlas({
                       style={{ width: pct(s.own, max) }}
                     />
                   )}
-                  {below > 0 && <span className="h-2 rounded-r bg-series-2" style={{ width: pct(below, max) }} />}
+                  {below > 0 && (
+                    <span className="h-2 rounded-r bg-series-2" style={{ width: pct(below, max) }} />
+                  )}
                 </span>
                 <span className="text-right text-xs tabular-nums text-fg-2">{total}</span>
               </button>

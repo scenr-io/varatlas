@@ -86,11 +86,11 @@ docs/
 
 Every `/api/*` request passes `security.ts` before reaching a route:
 
-| Check | Blocks |
-| --- | --- |
+| Check                                                          | Blocks                                                         |
+| -------------------------------------------------------------- | -------------------------------------------------------------- |
 | `Host` must be in `VARATLAS_ALLOWED_HOSTS` (default: loopback) | DNS rebinding, where a site points its own domain at 127.0.0.1 |
-| State-changing requests need a same-origin `Origin` header | Cross-site requests |
-| State-changing requests must be `application/json` | Form and `text/plain` posts, which skip CORS preflight |
+| State-changing requests need a same-origin `Origin` header     | Cross-site requests                                            |
+| State-changing requests must be `application/json`             | Form and `text/plain` posts, which skip CORS preflight         |
 
 `app.ts` also sets a strict Content-Security-Policy (same-origin scripts only), denies
 framing, and compresses responses.
@@ -101,14 +101,14 @@ on localhost only. See the README's security model.
 
 ### Routes
 
-| Route | Purpose |
-| --- | --- |
-| `GET /api/auth` | Is a token configured, does GitLab accept it, what are its scopes and expiry |
-| `POST /api/auth` | Check a pasted token and store it in the session cookie |
-| `DELETE /api/auth` | Forget the session token |
-| `GET /api/variables` | The cached snapshot; `?refresh=1` reloads from GitLab |
-| `POST` / `PUT` / `DELETE /api/variables` | Create, update or delete one variable |
-| `GET /healthz` | Liveness check for containers |
+| Route                                    | Purpose                                                                      |
+| ---------------------------------------- | ---------------------------------------------------------------------------- |
+| `GET /api/auth`                          | Is a token configured, does GitLab accept it, what are its scopes and expiry |
+| `POST /api/auth`                         | Check a pasted token and store it in the session cookie                      |
+| `DELETE /api/auth`                       | Forget the session token                                                     |
+| `GET /api/variables`                     | The cached snapshot; `?refresh=1` reloads from GitLab                        |
+| `POST` / `PUT` / `DELETE /api/variables` | Create, update or delete one variable                                        |
+| `GET /healthz`                           | Liveness check for containers                                                |
 
 Request bodies are parsed by `validation.ts`, which drops unknown fields, so a request
 can never pass extra parameters through to GitLab. Errors are `HttpError`s with a status
@@ -176,12 +176,12 @@ background when it is older than 30 seconds.
 `GET /api/auth` calls GitLab's `/user` and `/personal_access_tokens/self` together and
 classifies the result:
 
-| Result | `AuthStatus` |
-| --- | --- |
+| Result                                                                                         | `AuthStatus`                                                  |
+| ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
 | `/user` succeeds and scopes include `api` or `read_api` (or scopes are unknown, as with OAuth) | `configured: true`, with `token.scopes` and `token.expiresAt` |
-| `/user` returns 401 | `problem: "invalid"`; a refused cookie token is cleared |
-| `/user` returns 403, or scopes lack `api` and `read_api` | `problem: "scope"` |
-| GitLab can't be reached | `problem: "unreachable"` |
+| `/user` returns 401                                                                            | `problem: "invalid"`; a refused cookie token is cleared       |
+| `/user` returns 403, or scopes lack `api` and `read_api`                                       | `problem: "scope"`                                            |
+| GitLab can't be reached                                                                        | `problem: "unreachable"`                                      |
 
 Once data has loaded, `web/access.ts` adds what only the snapshot can tell: an account in
 no groups, or a role below Maintainer everywhere. It also marks `read_api` tokens as
@@ -213,13 +213,13 @@ flowchart TD
 
 ### Derived data (`insights.ts`)
 
-| Function | Used for |
-| --- | --- |
-| `findFindings` | Needs attention: unmasked or unprotected secrets, drift between unrelated places, shareable copies, overrides, unreadable places |
-| `effectiveRows` | What a project receives; nearer definitions win (project, then deeper groups) |
-| `summarizeKeys` | By-key view, key detail, "in N places" |
-| `groupStats` | The atlas: variables on each group versus below it |
-| `posture`, `scopeCounts` | Protection meters and environment breakdown |
+| Function                 | Used for                                                                                                                         |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| `findFindings`           | Needs attention: unmasked or unprotected secrets, drift between unrelated places, shareable copies, overrides, unreadable places |
+| `effectiveRows`          | What a project receives; nearer definitions win (project, then deeper groups)                                                    |
+| `summarizeKeys`          | By-key view, key detail, "in N places"                                                                                           |
+| `groupStats`             | The atlas: variables on each group versus below it                                                                               |
+| `posture`, `scopeCounts` | Protection meters and environment breakdown                                                                                      |
 
 These are pure functions with unit tests. Findings and atlas statistics are computed
 once per snapshot for the whole org (drift and overrides need the full picture), and a
@@ -238,11 +238,11 @@ selection only narrows them.
 
 ## Build and runtime
 
-| | Development | Production |
-| --- | --- | --- |
-| Command | `pnpm dev` | `pnpm build && pnpm start` |
-| UI | Vite on :3131 with hot reload | `dist/public`, precompressed (brotli and gzip), fingerprinted assets cached for a year |
-| API | `tsx watch` on :3132, proxied by Vite | `dist/server/index.mjs`, one esbuild bundle with no `node_modules` |
+|         | Development                           | Production                                                                             |
+| ------- | ------------------------------------- | -------------------------------------------------------------------------------------- |
+| Command | `pnpm dev`                            | `pnpm build && pnpm start`                                                             |
+| UI      | Vite on :3131 with hot reload         | `dist/public`, precompressed (brotli and gzip), fingerprinted assets cached for a year |
+| API     | `tsx watch` on :3132, proxied by Vite | `dist/server/index.mjs`, one esbuild bundle with no `node_modules`                     |
 
 The Vite proxy keeps the browser's `Host` header (`changeOrigin: false`) so the
 same-origin guard behaves the same in development and production.
@@ -272,21 +272,21 @@ amd64 + arm64 image to GHCR.
 
 Measured on a real org (18 groups, 31 projects, 60 variables):
 
-| | |
-| --- | --- |
+|                        |                                                         |
+| ---------------------- | ------------------------------------------------------- |
 | First load from GitLab | about 2.8 s (one REST call, then a few GraphQL queries) |
-| Reopening (cached) | about 2 ms |
-| Browser download | about 31 KB (brotli) |
-| Server bundle | about 70 KB |
+| Reopening (cached)     | about 2 ms                                              |
+| Browser download       | about 31 KB (brotli)                                    |
+| Server bundle          | about 70 KB                                             |
 
 **At scale.** `pnpm bench` times the analysis on a synthetic org with 500 groups,
 3,000 projects and 20,000 variables:
 
-| | |
-| --- | --- |
+|                                                                   |                      |
+| ----------------------------------------------------------------- | -------------------- |
 | Findings, atlas statistics and key summaries (once per data load) | about 25 ms in total |
-| Selecting a group or project in the sidebar | about 1 ms |
-| A search keystroke | about 3 ms |
+| Selecting a group or project in the sidebar                       | about 1 ms           |
+| A search keystroke                                                | about 3 ms           |
 
 The org-wide results are computed once per snapshot and a selection only narrows them.
 Each analysis is a single pass, indexed by key and by parent path, so the cost grows

@@ -54,11 +54,7 @@ describe("discoverTree", () => {
 
     const tree = await discoverTree("t", await listMemberGroups("t"));
 
-    expect(tree.groups.map((g) => g.full_path)).toEqual([
-      "acme",
-      "acme/platform",
-      "acme/platform/deep",
-    ]);
+    expect(tree.groups.map((g) => g.full_path)).toEqual(["acme", "acme/platform", "acme/platform/deep"]);
     expect(tree.projects.map((p) => p.path_with_namespace)).toEqual([
       "acme/platform/api",
       "acme/platform/deep/x",

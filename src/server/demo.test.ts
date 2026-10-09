@@ -24,8 +24,17 @@ describe("demo org", () => {
   });
 
   it("shows every kind of finding", () => {
-    const ids = findFindings(rows, entities).map((f) => f.id).sort();
-    expect(ids).toEqual(["copies", "drift", "overrides", "unmasked-secrets", "unprotected-secrets", "unreadable"]);
+    const ids = findFindings(rows, entities)
+      .map((f) => f.id)
+      .sort();
+    expect(ids).toEqual([
+      "copies",
+      "drift",
+      "overrides",
+      "unmasked-secrets",
+      "unprotected-secrets",
+      "unreadable",
+    ]);
   });
 
   it("never defines the same key and environment twice in one place", () => {
@@ -56,16 +65,40 @@ describe("demo backend", () => {
 
   it("creates, updates and deletes in memory", async () => {
     const a = app();
-    const draft = { key: "NEW_VAR", value: "hello-world", variable_type: "env_var", protected: false, masked: false, raw: false, environment_scope: "*" };
-    expect((await a.request(req("/api/variables", "POST", { entity: "group", id: 1, draft }))).status).toBe(200);
+    const draft = {
+      key: "NEW_VAR",
+      value: "hello-world",
+      variable_type: "env_var",
+      protected: false,
+      masked: false,
+      raw: false,
+      environment_scope: "*",
+    };
+    expect((await a.request(req("/api/variables", "POST", { entity: "group", id: 1, draft }))).status).toBe(
+      200,
+    );
     const updated = await a.request(
-      req("/api/variables", "PUT", { entity: "group", id: 1, key: "NEW_VAR", scope: "*", changes: { value: "changed-value" } }),
+      req("/api/variables", "PUT", {
+        entity: "group",
+        id: 1,
+        key: "NEW_VAR",
+        scope: "*",
+        changes: { value: "changed-value" },
+      }),
     );
     expect((await updated.json()).variable.value).toBe("changed-value");
-    expect((await a.request(req("/api/variables", "DELETE", { entity: "group", id: 1, key: "NEW_VAR", scope: "*" }))).status).toBe(200);
+    expect(
+      (
+        await a.request(
+          req("/api/variables", "DELETE", { entity: "group", id: 1, key: "NEW_VAR", scope: "*" }),
+        )
+      ).status,
+    ).toBe(200);
 
     const fresh = await (await a.request(req("/api/variables?refresh=1"))).json();
-    const root = fresh.entities.find((e: { id: number; entity: string }) => e.entity === "group" && e.id === 1);
+    const root = fresh.entities.find(
+      (e: { id: number; entity: string }) => e.entity === "group" && e.id === 1,
+    );
     expect(root.variables.some((v: { key: string }) => v.key === "NEW_VAR")).toBe(false);
   });
 

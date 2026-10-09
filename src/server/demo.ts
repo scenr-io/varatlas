@@ -115,7 +115,13 @@ const PROJECTS: [path: string, vars: Spec[] | "no-access"][] = [
     [
       ["NEXT_PUBLIC_API_URL", "https://api.northwind.example"],
       ["STRIPE_PUBLISHABLE_KEY", "demo-publishable-key"],
-      ["SENTRY_DSN", "https://demo@sentry.northwind.example/7", "m", "*", "Storefront has its own Sentry project"],
+      [
+        "SENTRY_DSN",
+        "https://demo@sentry.northwind.example/7",
+        "m",
+        "*",
+        "Storefront has its own Sentry project",
+      ],
     ],
   ],
   [
@@ -204,7 +210,11 @@ export function createDemo(): { backend: Backend; fetchOrg: () => Promise<OrgDat
   function entity(target: EntityRef): EntityVariables {
     const e = org.entities.find((x) => x.entity === target.entity && x.id === target.id);
     if (!e) throw new HttpError(404, "That group or project isn't part of the demo");
-    if (e.error) throw new HttpError(403, "You need the Maintainer role on this group or project to change its variables.");
+    if (e.error)
+      throw new HttpError(
+        403,
+        "You need the Maintainer role on this group or project to change its variables.",
+      );
     return e;
   }
   const find = (e: EntityVariables, key: string, scope: string) =>

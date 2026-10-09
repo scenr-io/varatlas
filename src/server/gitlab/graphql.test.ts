@@ -139,12 +139,30 @@ describe("fetchOrgGraphQL", () => {
 
   it("falls back to REST for entities with more variables than one page", async () => {
     const fetch = fakeGitLab({
-      groupsPages: { start: { ...group(1, "acme", null, vars([]) ), descendantGroups: page([]) } },
+      groupsPages: { start: { ...group(1, "acme", null, vars([])), descendantGroups: page([]) } },
       projectsPages: { start: page([project(10, "acme/api", 1, vars([gvar("A")], true))]) },
       rest: {
         "/projects/10/variables": [
-          { key: "A", value: "1", variable_type: "env_var", protected: false, masked: false, raw: false, environment_scope: "*", description: null },
-          { key: "B", value: "2", variable_type: "env_var", protected: false, masked: false, raw: false, environment_scope: "*", description: null },
+          {
+            key: "A",
+            value: "1",
+            variable_type: "env_var",
+            protected: false,
+            masked: false,
+            raw: false,
+            environment_scope: "*",
+            description: null,
+          },
+          {
+            key: "B",
+            value: "2",
+            variable_type: "env_var",
+            protected: false,
+            masked: false,
+            raw: false,
+            environment_scope: "*",
+            description: null,
+          },
         ],
       },
     });
@@ -179,7 +197,9 @@ describe("fetchOrgGraphQL", () => {
   it("surfaces GraphQL errors so the caller can fall back to REST", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => new Response(JSON.stringify({ errors: [{ message: "Field 'hidden' doesn't exist" }] }))),
+      vi.fn(
+        async () => new Response(JSON.stringify({ errors: [{ message: "Field 'hidden' doesn't exist" }] })),
+      ),
     );
     await expect(fetchOrgGraphQL("t", [root])).rejects.toThrow(/hidden/);
   });

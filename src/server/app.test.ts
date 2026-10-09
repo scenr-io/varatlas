@@ -98,7 +98,11 @@ describe("/api/variables", () => {
     expect(String(fetch.mock.calls[0][0])).toBe(
       "https://gitlab.com/api/v4/projects/7/variables/API_KEY?filter[environment_scope]=production",
     );
-    expect(store.patch).toHaveBeenCalledWith("glpat-test", { entity: "project", id: 7 }, expect.any(Function));
+    expect(store.patch).toHaveBeenCalledWith(
+      "glpat-test",
+      { entity: "project", id: 7 },
+      expect.any(Function),
+    );
   });
 
   it("explains a missing role on changes", async () => {
@@ -119,7 +123,10 @@ describe("/api/variables", () => {
   it("explains a read-only token on changes", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => new Response(JSON.stringify({ error: "insufficient_scope", scope: "api" }), { status: 403 })),
+      vi.fn(
+        async () =>
+          new Response(JSON.stringify({ error: "insufficient_scope", scope: "api" }), { status: 403 }),
+      ),
     );
     const res = await createApp({ store: makeStore() }).request(
       req("/api/variables", {
@@ -173,7 +180,10 @@ const ADA = { username: "ada", name: "Ada", avatar_url: null };
 
 describe("/api/auth token checks", () => {
   it("reports scopes and expiry for a working token", async () => {
-    gitlab({ status: 200, body: ADA }, { status: 200, body: { name: "ci", scopes: ["read_api"], expires_at: "2026-12-01" } });
+    gitlab(
+      { status: 200, body: ADA },
+      { status: 200, body: { name: "ci", scopes: ["read_api"], expires_at: "2026-12-01" } },
+    );
     const res = await createApp({ store: makeStore() }).request(req("/api/auth"));
     expect(await res.json()).toMatchObject({
       configured: true,
@@ -190,11 +200,20 @@ describe("/api/auth token checks", () => {
   it("flags a token without api or read_api as a scope problem", async () => {
     gitlab({ status: 200, body: ADA }, { status: 200, body: { scopes: ["read_user"] } });
     const res = await createApp({ store: makeStore() }).request(req("/api/auth"));
-    expect(await res.json()).toMatchObject({ configured: false, problem: "scope", token: { scopes: ["read_user"] } });
+    expect(await res.json()).toMatchObject({
+      configured: false,
+      problem: "scope",
+      token: { scopes: ["read_user"] },
+    });
   });
 
   it("tells unreachable GitLab apart from a bad token", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => { throw new TypeError("fetch failed"); }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new TypeError("fetch failed");
+      }),
+    );
     const res = await createApp({ store: makeStore() }).request(req("/api/auth"));
     expect(await res.json()).toMatchObject({ configured: false, problem: "unreachable" });
   });

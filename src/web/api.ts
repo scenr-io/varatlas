@@ -29,11 +29,8 @@ export const api = {
   disconnect: () => call<{ ok: true }>("/api/auth", "DELETE"),
 
   /** The server's cached snapshot, or a fresh load from GitLab when `refresh` is set. */
-  loadAll: (refresh = false) =>
-    call<OrgVariables>(refresh ? "/api/variables?refresh=1" : "/api/variables"),
-  create: (req: CreateVariableRequest) =>
-    call<{ variable: GitLabVariable }>("/api/variables", "POST", req),
-  update: (req: UpdateVariableRequest) =>
-    call<{ variable: GitLabVariable }>("/api/variables", "PUT", req),
+  loadAll: (refresh = false) => call<OrgVariables>(refresh ? "/api/variables?refresh=1" : "/api/variables"),
+  create: (req: CreateVariableRequest) => call<{ variable: GitLabVariable }>("/api/variables", "POST", req),
+  update: (req: UpdateVariableRequest) => call<{ variable: GitLabVariable }>("/api/variables", "PUT", req),
   remove: (req: DeleteVariableRequest) => call<{ ok: true }>("/api/variables", "DELETE", req),
 };

@@ -23,7 +23,11 @@ const NOW = Date.parse("2026-10-04T12:00:00Z");
 
 describe("accessState", () => {
   it("is fine and writable with the api scope", () => {
-    expect(accessState(auth(["api"]), [ent("a")], NOW)).toEqual({ kind: "ok", readOnly: false, expiresInDays: null });
+    expect(accessState(auth(["api"]), [ent("a")], NOW)).toEqual({
+      kind: "ok",
+      readOnly: false,
+      expiresInDays: null,
+    });
   });
 
   it("is read-only with read_api only", () => {

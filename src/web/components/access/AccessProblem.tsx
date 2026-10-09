@@ -31,7 +31,9 @@ function TokenChecks({ checks }: { checks: TokenCheck[] }) {
               <Icon className={`h-4 w-4 ${className}`} aria-label={label} role="img" />
             </span>
             <div className="min-w-0">
-              <p className={`text-[13px] ${c.status === "fail" ? "font-semibold text-fg" : "text-fg-2"}`}>{c.label}</p>
+              <p className={`text-[13px] ${c.status === "fail" ? "font-semibold text-fg" : "text-fg-2"}`}>
+                {c.label}
+              </p>
               {c.detail && <p className="mt-0.5 text-xs leading-relaxed text-fg-3">{c.detail}</p>}
             </div>
           </li>
@@ -49,10 +51,7 @@ const scopeList = (scopes: string[] | null | undefined) =>
   ) : undefined;
 
 /** The token check rows for a given failure point. */
-export function checksFor(
-  auth: AuthStatus,
-  failing: "accepted" | "read" | "role" | "groups",
-): TokenCheck[] {
+export function checksFor(auth: AuthStatus, failing: "accepted" | "read" | "role" | "groups"): TokenCheck[] {
   const scopes = auth.token?.scopes ?? null;
   const known = scopes !== null;
   const order = ["accepted", "read", "groups", "role"] as const;
@@ -68,7 +67,8 @@ export function checksFor(
     },
     {
       label: "Scope to read CI/CD variables: api or read_api",
-      detail: scopeList(scopes) ?? (at > 1 && !known ? "GitLab didn't report scopes for this token." : undefined),
+      detail:
+        scopeList(scopes) ?? (at > 1 && !known ? "GitLab didn't report scopes for this token." : undefined),
       status: status(1, known || at <= 1),
     },
     {
@@ -185,9 +185,10 @@ export function CheckAgain({ onClick }: { onClick: () => void }) {
 export function EnvTokenFix() {
   return (
     <p>
-      This token comes from <span className="font-mono text-fg">GITLAB_TOKEN</span> on the server, so it can't be
-      changed here. Set a new one where varatlas runs (for example in <span className="font-mono text-fg">.env.local</span>{" "}
-      or your container's environment), restart varatlas, then check again.
+      This token comes from <span className="font-mono text-fg">GITLAB_TOKEN</span> on the server, so it can't
+      be changed here. Set a new one where varatlas runs (for example in{" "}
+      <span className="font-mono text-fg">.env.local</span> or your container's environment), restart
+      varatlas, then check again.
     </p>
   );
 }

@@ -9,9 +9,7 @@ describe("config", () => {
 
   it("defaults to gitlab.com and trims trailing slashes", () => {
     expect(gitlabBaseUrl({})).toBe("https://gitlab.com");
-    expect(gitlabBaseUrl({ GITLAB_BASE_URL: "https://git.example.com//" })).toBe(
-      "https://git.example.com",
-    );
+    expect(gitlabBaseUrl({ GITLAB_BASE_URL: "https://git.example.com//" })).toBe("https://git.example.com");
   });
 
   it("excludes nothing by default", () => {

@@ -42,7 +42,9 @@ const app = createApp({
 
 const server = serve({ fetch: app.fetch, port, hostname }, () => {
   if (!dev) {
-    console.log(`varatlas${demo ? " (demo mode)" : ""} → http://localhost:${port}  (listening on ${hostname})`);
+    console.log(
+      `varatlas${demo ? " (demo mode)" : ""} → http://localhost:${port}  (listening on ${hostname})`,
+    );
   }
 });
 

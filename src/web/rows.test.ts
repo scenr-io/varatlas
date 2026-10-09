@@ -55,7 +55,8 @@ describe("distinctScopes", () => {
 
 describe("filterRows", () => {
   const none: Filters = { query: "", level: "all", attrs: new Set(), scope: "all", ids: null };
-  const keys = (f: Partial<Filters>) => filterRows(rows, { ...none, ...f }).map((r) => `${r.path}:${r.v.key}`);
+  const keys = (f: Partial<Filters>) =>
+    filterRows(rows, { ...none, ...f }).map((r) => `${r.path}:${r.v.key}`);
 
   it("filters by level, attributes and scope", () => {
     expect(keys({ level: "group" })).toEqual(["acme:REGISTRY"]);

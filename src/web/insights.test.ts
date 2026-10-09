@@ -41,13 +41,30 @@ const tree: OrgTree = {
     { id: 3, name: "web", full_path: "acme/web", parent_id: 1, web_url: "" },
   ],
   projects: [
-    { id: 10, name: "api", path_with_namespace: "acme/platform/api", namespace_id: 2, web_url: "", archived: false },
-    { id: 11, name: "site", path_with_namespace: "acme/web/site", namespace_id: 3, web_url: "", archived: false },
+    {
+      id: 10,
+      name: "api",
+      path_with_namespace: "acme/platform/api",
+      namespace_id: 2,
+      web_url: "",
+      archived: false,
+    },
+    {
+      id: 11,
+      name: "site",
+      path_with_namespace: "acme/web/site",
+      namespace_id: 3,
+      web_url: "",
+      archived: false,
+    },
   ],
 };
 
 const entities = [
-  ent("group", 1, "acme", [v("REGISTRY", { value: "r1", protected: true }), v("API_TOKEN", { masked: true })]),
+  ent("group", 1, "acme", [
+    v("REGISTRY", { value: "r1", protected: true }),
+    v("API_TOKEN", { masked: true }),
+  ]),
   ent("group", 2, "acme/platform", [v("DB_URL", { value: "postgres://a" })]),
   ent("group", 3, "acme/web", [v("SENTRY_DSN", { value: "same" })]),
   ent("project", 10, "acme/platform/api", [
@@ -124,7 +141,11 @@ describe("rowsInScope", () => {
   });
 
   it("gives a project its own and inherited variables", () => {
-    expect(paths({ entity: "project", path: "acme/web/site" })).toEqual(["acme", "acme/web", "acme/web/site"]);
+    expect(paths({ entity: "project", path: "acme/web/site" })).toEqual([
+      "acme",
+      "acme/web",
+      "acme/web/site",
+    ]);
   });
 
   it("covers everything without a selection", () => {

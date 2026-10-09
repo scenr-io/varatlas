@@ -14,12 +14,7 @@ import { canReadVariables } from "./gitlab/user";
 import { HttpError } from "./http";
 import { checkApiRequest } from "./security";
 import type { SnapshotStore } from "./snapshot";
-import {
-  parseCreateRequest,
-  parseDeleteRequest,
-  parseTokenRequest,
-  parseUpdateRequest,
-} from "./validation";
+import { parseCreateRequest, parseDeleteRequest, parseTokenRequest, parseUpdateRequest } from "./validation";
 
 const sameVar = (key: string, scope: string) => (v: GitLabVariable) =>
   v.key === key && v.environment_scope === scope;
@@ -46,7 +41,10 @@ function explainForbidden(e: unknown, action: "read" | "change"): never {
       );
     }
     if (action === "change") {
-      throw new HttpError(403, "You need the Maintainer role on this group or project to change its variables.");
+      throw new HttpError(
+        403,
+        "You need the Maintainer role on this group or project to change its variables.",
+      );
     }
   }
   throw e;
@@ -104,10 +102,7 @@ export function createApp({
   /* ---------------- API ---------------- */
 
   app.use("/api/*", async (c, next) => {
-    const verdict = checkApiRequest(
-      { method: c.req.method, headers: c.req.raw.headers },
-      allowedHosts(),
-    );
+    const verdict = checkApiRequest({ method: c.req.method, headers: c.req.raw.headers }, allowedHosts());
     if (!verdict.ok) return c.json({ error: verdict.error }, verdict.status as 403);
     c.header("Cache-Control", "no-store");
     await next();
@@ -130,9 +125,18 @@ export function createApp({
       return c.json<AuthStatus>({ configured: false, source, baseUrl, token: tokenInfo, problem });
     }
     if (!canReadVariables(info)) {
-      return c.json<AuthStatus>({ configured: false, source, baseUrl, user: user.value, token: tokenInfo, problem: "scope" });
+      return c.json<AuthStatus>({
+        configured: false,
+        source,
+        baseUrl,
+        user: user.value,
+        token: tokenInfo,
+        problem: "scope",
+      });
     }
-    return c.json<AuthStatus>(withDemo({ configured: true, source, user: user.value, baseUrl, token: tokenInfo }));
+    return c.json<AuthStatus>(
+      withDemo({ configured: true, source, user: user.value, baseUrl, token: tokenInfo }),
+    );
   });
 
   /** POST /api/auth: check a pasted token and keep it in the session cookie. */
@@ -148,9 +152,13 @@ export function createApp({
     const scopes = info?.scopes?.length ? `It has ${info.scopes.join(", ")}. ` : "";
     if (!userResult.ok) {
       const problem = classify(userResult.e, info !== null);
-      if (problem === "unreachable") throw new HttpError(502, `Couldn't reach GitLab at ${new URL(gitlabBaseUrl()).host}.`);
+      if (problem === "unreachable")
+        throw new HttpError(502, `Couldn't reach GitLab at ${new URL(gitlabBaseUrl()).host}.`);
       if (problem === "scope") throw new HttpError(400, `This token can't be used. ${scopes}${SCOPE_HELP}`);
-      throw new HttpError(400, "GitLab refused this token. Check it hasn't expired or been revoked, and that it was copied in full.");
+      throw new HttpError(
+        400,
+        "GitLab refused this token. Check it hasn't expired or been revoked, and that it was copied in full.",
+      );
     }
     if (!canReadVariables(info)) {
       throw new HttpError(400, `This token can't read CI/CD variables. ${scopes}${SCOPE_HELP}`);
@@ -194,9 +202,7 @@ export function createApp({
     const variable = await updateVariable(token, { entity, id }, key, scope, changes).catch((e) =>
       explainForbidden(e, "change"),
     );
-    store.patch(token, { entity, id }, (vars) =>
-      vars.map((v) => (sameVar(key, scope)(v) ? variable : v)),
-    );
+    store.patch(token, { entity, id }, (vars) => vars.map((v) => (sameVar(key, scope)(v) ? variable : v)));
     return c.json({ variable });
   });
 
