@@ -21,9 +21,11 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm deadcode",
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm deadcode",
     "deadcode": "knip",
-    "bench": "tsx scripts/bench.ts"
+    "bench": "tsx scripts/bench.ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",
@@ -36,6 +38,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.13.0",
     "knip": "^6.39.0",
+    "prettier": "^3.9.9",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "^5",
