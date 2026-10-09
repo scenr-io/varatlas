@@ -8,7 +8,7 @@ requests, discussions or anywhere else the project is represented.
 
 ## Reporting
 
-If someone's behaviour bothers you, email **[CONTACT EMAIL]**. Reports are read only by
+If someone's behaviour bothers you, email [jenish@scenr.io](mailto:jenish@scenr.io). Reports are read only by
 the maintainers at Scenr Technologies and are kept confidential. You'll get a reply
 within a few working days.
 
