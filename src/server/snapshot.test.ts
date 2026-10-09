@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { variable } from "../../test/helpers";
 import type { OrgData } from "./gitlab/org";
 import { createSnapshotStore } from "./snapshot";
 
@@ -11,18 +12,7 @@ const data = (key = "A"): OrgData => ({
       path: "acme/api",
       name: "api",
       web_url: "",
-      variables: [
-        {
-          key,
-          value: "v",
-          variable_type: "env_var",
-          protected: false,
-          masked: false,
-          raw: false,
-          environment_scope: "*",
-          description: null,
-        },
-      ],
+      variables: [variable(key)],
     },
   ],
   source: "graphql",
@@ -58,8 +48,8 @@ describe("createSnapshotStore", () => {
     const load = vi.fn(async (token: string) => data(token));
     const store = createSnapshotStore(load);
 
-    expect((await store.get("one")).entities[0].variables[0].key).toBe("one");
-    expect((await store.get("two")).entities[0].variables[0].key).toBe("two");
+    expect((await store.get("one")).entities[0]?.variables[0]?.key).toBe("one");
+    expect((await store.get("two")).entities[0]?.variables[0]?.key).toBe("two");
     store.drop("one");
     await store.get("one");
     expect(load).toHaveBeenCalledTimes(3);
@@ -69,7 +59,7 @@ describe("createSnapshotStore", () => {
     const store = createSnapshotStore(async () => data());
     await store.get("t");
     store.patch("t", { entity: "project", id: 1 }, (vars) => vars.filter((v) => v.key !== "A"));
-    expect((await store.get("t")).entities[0].variables).toEqual([]);
+    expect((await store.get("t")).entities[0]?.variables).toEqual([]);
   });
 
   it("does not cache failed loads", async () => {

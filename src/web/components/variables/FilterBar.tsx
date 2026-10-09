@@ -1,5 +1,8 @@
+/* Search and filters above the variables table, plus the by-location / by-key switch. */
+
 import { useEffect, useRef } from "preact/hooks";
 import { Eye, EyeOff, Search, X } from "lucide-preact";
+import { scopeLabel } from "@/format";
 import type { AttrFilter, LevelFilter } from "@/rows";
 
 export type Mode = "location" | "key";
@@ -26,7 +29,9 @@ const segment = (on: boolean) =>
   `px-3 py-1.5 text-[13px] transition-colors ${on ? "bg-raised font-medium text-fg" : "text-fg-2 hover:text-fg"}`;
 const toggle = (on: boolean) =>
   `rounded-md border px-2.5 py-1.5 text-[13px] transition-colors ${
-    on ? "border-accent/50 bg-accent/10 text-accent" : "border-line text-fg-2 hover:border-line-strong hover:text-fg"
+    on
+      ? "border-accent/50 bg-accent/10 text-accent"
+      : "border-line text-fg-2 hover:border-line-strong hover:text-fg"
   }`;
 
 interface Props {
@@ -56,8 +61,9 @@ export function FilterBar(p: Props) {
   // "/" jumps to search, as in GitLab and GitHub.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      if (e.key === "/" && !["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) {
+      const typing =
+        e.target instanceof HTMLElement && ["INPUT", "TEXTAREA", "SELECT"].includes(e.target.tagName);
+      if (e.key === "/" && !typing) {
         e.preventDefault();
         search.current?.focus();
       }
@@ -94,9 +100,18 @@ export function FilterBar(p: Props) {
           )}
         </div>
 
-        <div className="flex overflow-hidden rounded-md border border-line" role="group" aria-label="Group results">
+        <div
+          className="flex overflow-hidden rounded-md border border-line"
+          role="group"
+          aria-label="Group results"
+        >
           {MODES.map(([m, label]) => (
-            <button key={m} onClick={() => p.onMode(m)} aria-pressed={p.mode === m} className={segment(p.mode === m)}>
+            <button
+              key={m}
+              onClick={() => p.onMode(m)}
+              aria-pressed={p.mode === m}
+              className={segment(p.mode === m)}
+            >
               {label}
             </button>
           ))}
@@ -118,9 +133,18 @@ export function FilterBar(p: Props) {
         )}
 
         {p.showLevel && (
-          <div className="flex overflow-hidden rounded-md border border-line" role="group" aria-label="Where defined">
+          <div
+            className="flex overflow-hidden rounded-md border border-line"
+            role="group"
+            aria-label="Where defined"
+          >
             {LEVELS.map(([l, label]) => (
-              <button key={l} onClick={() => p.onLevel(l)} aria-pressed={p.level === l} className={segment(p.level === l)}>
+              <button
+                key={l}
+                onClick={() => p.onLevel(l)}
+                aria-pressed={p.level === l}
+                className={segment(p.level === l)}
+              >
                 {label}
               </button>
             ))}
@@ -128,7 +152,12 @@ export function FilterBar(p: Props) {
         )}
 
         {ATTRS.map(([a, label]) => (
-          <button key={a} onClick={() => p.onToggleAttr(a)} aria-pressed={p.attrs.has(a)} className={toggle(p.attrs.has(a))}>
+          <button
+            key={a}
+            onClick={() => p.onToggleAttr(a)}
+            aria-pressed={p.attrs.has(a)}
+            className={toggle(p.attrs.has(a))}
+          >
             {label}
           </button>
         ))}
@@ -143,7 +172,7 @@ export function FilterBar(p: Props) {
             <option value="all">All environments</option>
             {p.scopes.map((s) => (
               <option key={s} value={s}>
-                {s === "*" ? "* (all environments)" : s}
+                {scopeLabel(s)}
               </option>
             ))}
           </select>

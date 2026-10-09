@@ -1,4 +1,4 @@
-/* Which GitLab token to use: GITLAB_TOKEN from the environment, else the session cookie. */
+/* Which GitLab token to use: the server's own token if it has one, else the session cookie. */
 
 import type { Context } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
@@ -8,29 +8,27 @@ import { HttpError } from "./http";
 const TOKEN_COOKIE = "varatlas_token";
 const THIRTY_DAYS = 60 * 60 * 24 * 30;
 
-export function resolveToken(c: Context): {
+export function resolveToken(
+  c: Context,
+  serverToken: string | null,
+): {
   token: string | null;
   source: TokenSource | null;
 } {
-  if (process.env.GITLAB_TOKEN) {
-    return { token: process.env.GITLAB_TOKEN, source: "env" };
-  }
+  if (serverToken) return { token: serverToken, source: "env" };
   const cookie = getCookie(c, TOKEN_COOKIE);
   if (cookie) return { token: cookie, source: "cookie" };
   return { token: null, source: null };
 }
 
-export function requireToken(c: Context): string {
-  const { token } = resolveToken(c);
+export function requireToken(c: Context, serverToken: string | null): string {
+  const { token } = resolveToken(c, serverToken);
   if (!token) throw new HttpError(401, "No GitLab token configured");
   return token;
 }
 
 function isHttps(c: Context): boolean {
-  return (
-    new URL(c.req.url).protocol === "https:" ||
-    c.req.header("x-forwarded-proto") === "https"
-  );
+  return new URL(c.req.url).protocol === "https:" || c.req.header("x-forwarded-proto") === "https";
 }
 
 export function setTokenCookie(c: Context, token: string) {

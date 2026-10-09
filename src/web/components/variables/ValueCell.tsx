@@ -1,3 +1,5 @@
+/* A variable's value in the table: hidden until revealed, and copyable. */
+
 import { useState } from "preact/hooks";
 import { Check, Copy, Eye, EyeOff } from "lucide-preact";
 import { useToast } from "@/components/ui/Toast";
@@ -33,7 +35,9 @@ export function ValueCell({ v, revealAll }: { v: GitLabVariable; revealAll: bool
   return (
     <div className="group/val flex min-w-0 items-center gap-1">
       <span className={`truncate font-mono text-xs ${visible ? "text-fg" : "text-fg-3"}`}>
-        {visible ? v.value || <span className="italic text-fg-3">empty</span> : "•".repeat(Math.min(Math.max(v.value?.length ?? 8, 6), 14))}
+        {visible
+          ? v.value || <span className="italic text-fg-3">empty</span>
+          : "•".repeat(Math.min(Math.max(v.value?.length ?? 8, 6), 14))}
       </span>
       {!revealAll && (
         <button
@@ -45,7 +49,12 @@ export function ValueCell({ v, revealAll }: { v: GitLabVariable; revealAll: bool
           {shown ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
         </button>
       )}
-      <button onClick={copy} title="Copy value" aria-label={`Copy value of ${v.key}`} className={iconButton}>
+      <button
+        onClick={() => void copy()}
+        title="Copy value"
+        aria-label={`Copy value of ${v.key}`}
+        className={iconButton}
+      >
         {copied ? <Check className="h-3.5 w-3.5 text-good" /> : <Copy className="h-3.5 w-3.5" />}
       </button>
     </div>

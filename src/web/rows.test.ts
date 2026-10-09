@@ -1,18 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { distinctScopes, filterRows, toRows, type Filters } from "./rows";
-import type { EntityVariables, GitLabVariable } from "@shared/types";
-
-const v = (key: string, over: Partial<GitLabVariable> = {}): GitLabVariable => ({
-  key,
-  value: "value",
-  variable_type: "env_var",
-  protected: false,
-  masked: false,
-  raw: false,
-  environment_scope: "*",
-  description: null,
-  ...over,
-});
+import type { EntityVariables } from "@shared/types";
+import { variable as v } from "../../test/helpers";
 
 const entities: EntityVariables[] = [
   {
@@ -55,7 +44,8 @@ describe("distinctScopes", () => {
 
 describe("filterRows", () => {
   const none: Filters = { query: "", level: "all", attrs: new Set(), scope: "all", ids: null };
-  const keys = (f: Partial<Filters>) => filterRows(rows, { ...none, ...f }).map((r) => `${r.path}:${r.v.key}`);
+  const keys = (f: Partial<Filters>) =>
+    filterRows(rows, { ...none, ...f }).map((r) => `${r.path}:${r.v.key}`);
 
   it("filters by level, attributes and scope", () => {
     expect(keys({ level: "group" })).toEqual(["acme:REGISTRY"]);

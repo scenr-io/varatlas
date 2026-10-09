@@ -49,7 +49,7 @@ src/
     snapshot.ts           in-memory snapshot cache per token
     backend.ts            where variables come from: GitLab, or the demo org
     demo.ts               the demo org (VARATLAS_DEMO=1)
-    config.ts             environment settings
+    config.ts             environment settings; the only module that reads process.env
     http.ts               HttpError
     pooled.ts             bounded-concurrency map
     gitlab/
@@ -61,24 +61,49 @@ src/
       user.ts             current user, token scopes and expiry
   shared/
     types.ts              types shared by server and browser
+    variables.ts          key rules and variable identity (key + environment scope)
   web/                    browser side; no secrets, no Node APIs
     main.tsx              entry point
     api.ts                typed client for /api
-    hooks/                useOrgVariables (auth, snapshot, mutations), useAutoFocus
+    hooks/
+      useOrgVariables.ts  auth status, snapshot and mutations
+      useDashboardState.ts  view, selection, filters, open panels
+      useOrgView.ts       data derived from the snapshot for the current selection
+      useVariableEditing.ts  add / edit / delete flows and their toasts
+      useEscape.ts, useAutoFocus.ts  small DOM helpers for panels and dialogs
     rows.ts               flat row model and the filter bar's filtering
     insights.ts           findings, key summaries, inheritance, statistics
+    overview.ts           the overview's headline and copy for the current selection
+    edits.ts              which fields an edit changes
     access.ts             what the connected token can do
+    format.ts             plurals, percentages, environment scope labels
     secrets.ts            "looks like a secret" heuristic
-    tree.ts               group tree for the sidebar
+    tree.ts               group tree for the sidebar, entity lookup
     virtual.ts            windowing math for the virtualized table
-    components/           UI, grouped by feature (overview, variables, access, layout, ui)
+    components/
+      Dashboard.tsx       AuthGate around Workspace
+      Workspace.tsx       the layout once a token works
+      auth/               AuthGate (which screen to show), TokenGate (connect)
+      access/             token problem screens and banners
+      layout/             sidebar, top bar, sync status
+      overview/           findings, atlas, breakdowns
+      variables/          tables, filters, key detail, add/edit drawer, delete dialog
+      ui/                 shared primitives: Button, Drawer, Badge, Toast, ...
     styles.css            design tokens (dark only)
 scripts/
   dev.mjs                 runs the API server and Vite together
   build.mjs               bundles the server, precompresses the web assets
+  bench.ts                analysis benchmark on a synthetic org
+test/
+  helpers.ts              fixtures and fetch stubs shared by all tests
+  integration/            demo org and full-workspace tests
+  e2e/                    Playwright tests against the built server in demo mode
 docs/
   architecture.md         this file
+  conventions.md          how code in this repo is written
 ```
+
+Unit and component tests sit next to the code they test (`rows.ts`, `rows.test.ts`).
 
 ## Server
 
@@ -86,11 +111,11 @@ docs/
 
 Every `/api/*` request passes `security.ts` before reaching a route:
 
-| Check | Blocks |
-| --- | --- |
+| Check                                                          | Blocks                                                         |
+| -------------------------------------------------------------- | -------------------------------------------------------------- |
 | `Host` must be in `VARATLAS_ALLOWED_HOSTS` (default: loopback) | DNS rebinding, where a site points its own domain at 127.0.0.1 |
-| State-changing requests need a same-origin `Origin` header | Cross-site requests |
-| State-changing requests must be `application/json` | Form and `text/plain` posts, which skip CORS preflight |
+| State-changing requests need a same-origin `Origin` header     | Cross-site requests                                            |
+| State-changing requests must be `application/json`             | Form and `text/plain` posts, which skip CORS preflight         |
 
 `app.ts` also sets a strict Content-Security-Policy (same-origin scripts only), denies
 framing, and compresses responses.
@@ -101,14 +126,14 @@ on localhost only. See the README's security model.
 
 ### Routes
 
-| Route | Purpose |
-| --- | --- |
-| `GET /api/auth` | Is a token configured, does GitLab accept it, what are its scopes and expiry |
-| `POST /api/auth` | Check a pasted token and store it in the session cookie |
-| `DELETE /api/auth` | Forget the session token |
-| `GET /api/variables` | The cached snapshot; `?refresh=1` reloads from GitLab |
-| `POST` / `PUT` / `DELETE /api/variables` | Create, update or delete one variable |
-| `GET /healthz` | Liveness check for containers |
+| Route                                    | Purpose                                                                      |
+| ---------------------------------------- | ---------------------------------------------------------------------------- |
+| `GET /api/auth`                          | Is a token configured, does GitLab accept it, what are its scopes and expiry |
+| `POST /api/auth`                         | Check a pasted token and store it in the session cookie                      |
+| `DELETE /api/auth`                       | Forget the session token                                                     |
+| `GET /api/variables`                     | The cached snapshot; `?refresh=1` reloads from GitLab                        |
+| `POST` / `PUT` / `DELETE /api/variables` | Create, update or delete one variable                                        |
+| `GET /healthz`                           | Liveness check for containers                                                |
 
 Request bodies are parsed by `validation.ts`, which drops unknown fields, so a request
 can never pass extra parameters through to GitLab. Errors are `HttpError`s with a status
@@ -176,12 +201,12 @@ background when it is older than 30 seconds.
 `GET /api/auth` calls GitLab's `/user` and `/personal_access_tokens/self` together and
 classifies the result:
 
-| Result | `AuthStatus` |
-| --- | --- |
+| Result                                                                                         | `AuthStatus`                                                  |
+| ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
 | `/user` succeeds and scopes include `api` or `read_api` (or scopes are unknown, as with OAuth) | `configured: true`, with `token.scopes` and `token.expiresAt` |
-| `/user` returns 401 | `problem: "invalid"`; a refused cookie token is cleared |
-| `/user` returns 403, or scopes lack `api` and `read_api` | `problem: "scope"` |
-| GitLab can't be reached | `problem: "unreachable"` |
+| `/user` returns 401                                                                            | `problem: "invalid"`; a refused cookie token is cleared       |
+| `/user` returns 403, or scopes lack `api` and `read_api`                                       | `problem: "scope"`                                            |
+| GitLab can't be reached                                                                        | `problem: "unreachable"`                                      |
 
 Once data has loaded, `web/access.ts` adds what only the snapshot can tell: an account in
 no groups, or a role below Maintainer everywhere. It also marks `read_api` tokens as
@@ -205,21 +230,25 @@ flowchart TD
 
 - **`useOrgVariables`** owns the auth status and the snapshot. Mutations call the API and
   then patch local state, so the UI updates without a reload.
-- **`Dashboard`** holds the view state (selection, filters, open panels) and composes
-  everything. The current view is kept in the URL hash.
+- **`AuthGate`** decides what to show from the auth status: the connect screen, a token
+  problem, or the workspace. Its decisions are unit tested.
+- **`Workspace`** lays out the app. Its state lives in three hooks: `useDashboardState`
+  (selection, filters, open panels; the current view is kept in the URL hash),
+  `useOrgView` (data derived for the selection) and `useVariableEditing` (the add, edit
+  and delete flows).
 - **Scope first, then filter.** `rowsInScope` turns the selection into rows: everything
   below a group, or a project's effective variables (its own plus inherited ones, with
   replaced values marked). The filter bar then narrows those rows.
 
 ### Derived data (`insights.ts`)
 
-| Function | Used for |
-| --- | --- |
-| `findFindings` | Needs attention: unmasked or unprotected secrets, drift between unrelated places, shareable copies, overrides, unreadable places |
-| `effectiveRows` | What a project receives; nearer definitions win (project, then deeper groups) |
-| `summarizeKeys` | By-key view, key detail, "in N places" |
-| `groupStats` | The atlas: variables on each group versus below it |
-| `posture`, `scopeCounts` | Protection meters and environment breakdown |
+| Function                 | Used for                                                                                                                         |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| `findFindings`           | Needs attention: unmasked or unprotected secrets, drift between unrelated places, shareable copies, overrides, unreadable places |
+| `effectiveRows`          | What a project receives; nearer definitions win (project, then deeper groups)                                                    |
+| `summarizeKeys`          | By-key view, key detail, "in N places"                                                                                           |
+| `groupStats`             | The atlas: variables on each group versus below it                                                                               |
+| `posture`, `scopeCounts` | Protection meters and environment breakdown                                                                                      |
 
 These are pure functions with unit tests. Findings and atlas statistics are computed
 once per snapshot for the whole org (drift and overrides need the full picture), and a
@@ -238,22 +267,23 @@ selection only narrows them.
 
 ## Build and runtime
 
-| | Development | Production |
-| --- | --- | --- |
-| Command | `pnpm dev` | `pnpm build && pnpm start` |
-| UI | Vite on :3131 with hot reload | `dist/public`, precompressed (brotli and gzip), fingerprinted assets cached for a year |
-| API | `tsx watch` on :3132, proxied by Vite | `dist/server/index.mjs`, one esbuild bundle with no `node_modules` |
+|         | Development                           | Production                                                                             |
+| ------- | ------------------------------------- | -------------------------------------------------------------------------------------- |
+| Command | `pnpm dev`                            | `pnpm build && pnpm start`                                                             |
+| UI      | Vite on :3131 with hot reload         | `dist/public`, precompressed (brotli and gzip), fingerprinted assets cached for a year |
+| API     | `tsx watch` on :3132, proxied by Vite | `dist/server/index.mjs`, one esbuild bundle with no `node_modules`                     |
 
 The Vite proxy keeps the browser's `Host` header (`changeOrigin: false`) so the
 same-origin guard behaves the same in development and production.
 
-**Container.** A distroless Node image running as a non-root user, about 50 MB. It works
+**Container.** A distroless Node image running as a non-root user, about 50 MB to download. It works
 with a read-only filesystem and all capabilities dropped, listens on `0.0.0.0:3131`
 inside the container, and has a health check on `/healthz`. See `Dockerfile` and
 `compose.yaml`.
 
-**CI.** Every push and pull request runs lint, typecheck, tests, dead-code detection and
-the build, then builds the image and smoke-tests it. Pushing a `v*` tag publishes an
+**CI.** Every push and pull request runs the formatting check, lint, typecheck, tests with
+a coverage floor, dead-code detection and the build; runs the browser tests; and builds
+the image and smoke-tests it. Pushing a `v*` tag publishes an
 amd64 + arm64 image to GHCR.
 
 ## Testing
@@ -261,32 +291,39 @@ amd64 + arm64 image to GHCR.
 - **Server:** routes are exercised with `app.request()`; GitLab is replaced by stubbing
   `fetch`. Guards, validation, the auth classification, the GraphQL loader, pagination,
   retries and the cache each have their own tests.
-- **Web:** the pure modules (`rows`, `insights`, `access`, `tree`, `virtual`) are unit
-  tested.
+- **Web logic:** the pure modules (`rows`, `insights`, `overview`, `access`, `tree`,
+  `virtual`) are unit tested.
+- **Components and hooks:** rendered with Testing Library in happy-dom (files start with
+  `// @vitest-environment happy-dom`). `test/integration/workspace.test.tsx` renders the
+  whole workspace over the demo org.
+- **Browser:** Playwright drives the built server in demo mode (`pnpm build && pnpm
+test:e2e`): the overview, adding, editing and deleting a variable, and the error
+  screens. Locally it uses the installed Chrome.
+- **Coverage:** `pnpm test:coverage` fails below the floor set in `vite.config.ts`.
 - **Dead code:** `knip` runs as part of `pnpm check`.
 - **Performance:** `pnpm bench` times the analysis on a synthetic 20,000-variable org.
 
-`pnpm check` runs all of the above locally.
+`pnpm check` runs everything except the browser tests and the benchmark.
 
 ## Performance
 
 Measured on a real org (18 groups, 31 projects, 60 variables):
 
-| | |
-| --- | --- |
+|                        |                                                         |
+| ---------------------- | ------------------------------------------------------- |
 | First load from GitLab | about 2.8 s (one REST call, then a few GraphQL queries) |
-| Reopening (cached) | about 2 ms |
-| Browser download | about 31 KB (brotli) |
-| Server bundle | about 70 KB |
+| Reopening (cached)     | about 2 ms                                              |
+| Browser download       | about 31 KB (brotli)                                    |
+| Server bundle          | about 70 KB                                             |
 
 **At scale.** `pnpm bench` times the analysis on a synthetic org with 500 groups,
 3,000 projects and 20,000 variables:
 
-| | |
-| --- | --- |
+|                                                                   |                      |
+| ----------------------------------------------------------------- | -------------------- |
 | Findings, atlas statistics and key summaries (once per data load) | about 25 ms in total |
-| Selecting a group or project in the sidebar | about 1 ms |
-| A search keystroke | about 3 ms |
+| Selecting a group or project in the sidebar                       | about 1 ms           |
+| A search keystroke                                                | about 3 ms           |
 
 The org-wide results are computed once per snapshot and a selection only narrows them.
 Each analysis is a single pass, indexed by key and by parent path, so the cost grows
@@ -306,12 +343,16 @@ with the number of variables rather than with its square.
 
 ## Making changes
 
-- **Add a finding:** add it to `findFindings` in `web/insights.ts` with a test. If it is
-  counted in keys rather than variables, add its id to `KEY_UNITS` in `Dashboard.tsx`.
-  The overview and the finding filter pick it up automatically.
+- **Add a finding:** add it to `findFindings` in `web/insights.ts` with a test, and say
+  what it counts (`counts` and `unit`). The overview and the finding filter pick it up
+  automatically.
 - **Add an API route:** add it in `server/app.ts`, parse its body in `validation.ts`, and
   test it with `app.request()`. The guards apply to everything under `/api`.
 - **Talk to a new GitLab endpoint:** use `glJson`, `glPaginated` or `glGraphQL` from
   `server/gitlab/client.ts`, so retries and error messages behave the same everywhere.
+- **Add a screen or panel:** build it from `components/ui` (`Button`, `Drawer`, `Centered`)
+  rather than new markup, so focus, Escape and styling behave the same everywhere.
 - **Change the look:** edit the tokens in `web/styles.css` and keep components using roles,
   not raw colors. Check text contrast against the surface colors.
+
+See [conventions.md](conventions.md) for naming, exports, comments and test style.

@@ -5,24 +5,17 @@ import { relative } from "node:path";
 import { Hono } from "hono";
 import { compress } from "hono/compress";
 import { secureHeaders } from "hono/secure-headers";
-import type { AuthProblem, AuthStatus, GitLabVariable } from "../shared/types";
+import type { AuthProblem, AuthStatus } from "../shared/types";
+import { isSameVariable } from "../shared/variables";
 import { clearTokenCookie, requireToken, resolveToken, setTokenCookie } from "./auth";
 import { gitlabBackend, type Backend } from "./backend";
-import { allowedHosts } from "./config";
+import { allowedHosts, serverToken } from "./config";
 import { GitLabError } from "./gitlab/client";
 import { canReadVariables } from "./gitlab/user";
 import { HttpError } from "./http";
 import { checkApiRequest } from "./security";
 import type { SnapshotStore } from "./snapshot";
-import {
-  parseCreateRequest,
-  parseDeleteRequest,
-  parseTokenRequest,
-  parseUpdateRequest,
-} from "./validation";
-
-const sameVar = (key: string, scope: string) => (v: GitLabVariable) =>
-  v.key === key && v.environment_scope === scope;
+import { parseCreateRequest, parseDeleteRequest, parseTokenRequest, parseUpdateRequest } from "./validation";
 
 /** How a failed /user call should be explained. */
 function classify(e: unknown, scopesKnown: boolean): AuthProblem {
@@ -46,7 +39,10 @@ function explainForbidden(e: unknown, action: "read" | "change"): never {
       );
     }
     if (action === "change") {
-      throw new HttpError(403, "You need the Maintainer role on this group or project to change its variables.");
+      throw new HttpError(
+        403,
+        "You need the Maintainer role on this group or project to change its variables.",
+      );
     }
   }
   throw e;
@@ -65,12 +61,15 @@ export function createApp({
   publicDir,
   backend = gitlabBackend,
   demo = false,
+  getServerToken = serverToken,
 }: {
   store: SnapshotStore;
   publicDir?: string;
   /** where variables come from; the built-in demo org when `demo` is set */
   backend?: Backend;
   demo?: boolean;
+  /** the server-side token (GITLAB_TOKEN, or the demo token); read per request so tests can change it */
+  getServerToken?: () => string | null;
 }) {
   const { whoAmI, tokenAccess, createVariable, updateVariable, deleteVariable } = backend;
   const gitlabBaseUrl = () => backend.baseUrl();
@@ -104,11 +103,8 @@ export function createApp({
   /* ---------------- API ---------------- */
 
   app.use("/api/*", async (c, next) => {
-    const verdict = checkApiRequest(
-      { method: c.req.method, headers: c.req.raw.headers },
-      allowedHosts(),
-    );
-    if (!verdict.ok) return c.json({ error: verdict.error }, verdict.status as 403);
+    const verdict = checkApiRequest({ method: c.req.method, headers: c.req.raw.headers }, allowedHosts());
+    if (!verdict.ok) return c.json({ error: verdict.error }, verdict.status);
     c.header("Cache-Control", "no-store");
     await next();
   });
@@ -116,7 +112,7 @@ export function createApp({
   /** GET /api/auth: is a token configured, does GitLab accept it, and what may it do? */
   app.get("/api/auth", async (c) => {
     const baseUrl = gitlabBaseUrl();
-    const { token, source } = resolveToken(c);
+    const { token, source } = resolveToken(c, getServerToken());
     if (!token) return c.json<AuthStatus>({ configured: false, source: null, baseUrl });
 
     const [user, access] = await Promise.allSettled([whoAmI(token), tokenAccess(token)]);
@@ -130,9 +126,18 @@ export function createApp({
       return c.json<AuthStatus>({ configured: false, source, baseUrl, token: tokenInfo, problem });
     }
     if (!canReadVariables(info)) {
-      return c.json<AuthStatus>({ configured: false, source, baseUrl, user: user.value, token: tokenInfo, problem: "scope" });
+      return c.json<AuthStatus>({
+        configured: false,
+        source,
+        baseUrl,
+        user: user.value,
+        token: tokenInfo,
+        problem: "scope",
+      });
     }
-    return c.json<AuthStatus>(withDemo({ configured: true, source, user: user.value, baseUrl, token: tokenInfo }));
+    return c.json<AuthStatus>(
+      withDemo({ configured: true, source, user: user.value, baseUrl, token: tokenInfo }),
+    );
   });
 
   /** POST /api/auth: check a pasted token and keep it in the session cookie. */
@@ -141,16 +146,20 @@ export function createApp({
     const [userResult, info] = await Promise.all([
       whoAmI(token).then(
         (u) => ({ ok: true as const, u }),
-        (e) => ({ ok: false as const, e }),
+        (e: unknown) => ({ ok: false as const, e }),
       ),
       tokenAccess(token),
     ]);
     const scopes = info?.scopes?.length ? `It has ${info.scopes.join(", ")}. ` : "";
     if (!userResult.ok) {
       const problem = classify(userResult.e, info !== null);
-      if (problem === "unreachable") throw new HttpError(502, `Couldn't reach GitLab at ${new URL(gitlabBaseUrl()).host}.`);
+      if (problem === "unreachable")
+        throw new HttpError(502, `Couldn't reach GitLab at ${new URL(gitlabBaseUrl()).host}.`);
       if (problem === "scope") throw new HttpError(400, `This token can't be used. ${scopes}${SCOPE_HELP}`);
-      throw new HttpError(400, "GitLab refused this token. Check it hasn't expired or been revoked, and that it was copied in full.");
+      throw new HttpError(
+        400,
+        "GitLab refused this token. Check it hasn't expired or been revoked, and that it was copied in full.",
+      );
     }
     if (!canReadVariables(info)) {
       throw new HttpError(400, `This token can't read CI/CD variables. ${scopes}${SCOPE_HELP}`);
@@ -163,7 +172,7 @@ export function createApp({
   });
 
   app.delete("/api/auth", (c) => {
-    const { token, source } = resolveToken(c);
+    const { token, source } = resolveToken(c, getServerToken());
     if (token && source === "cookie") store.drop(token);
     clearTokenCookie(c);
     return c.json({ ok: true });
@@ -171,17 +180,17 @@ export function createApp({
 
   /** ?refresh=1 forces a reload from GitLab; otherwise the cached snapshot is returned. */
   app.get("/api/variables", async (c) => {
-    const token = requireToken(c);
+    const token = requireToken(c, getServerToken());
     const snapshot = await store
       .get(token, { fresh: c.req.query("refresh") === "1" })
-      .catch((e) => explainForbidden(e, "read"));
+      .catch((e: unknown) => explainForbidden(e, "read"));
     return c.json(snapshot);
   });
 
   app.post("/api/variables", async (c) => {
-    const token = requireToken(c);
+    const token = requireToken(c, getServerToken());
     const { entity, id, draft } = parseCreateRequest(await readJson(c.req.raw));
-    const variable = await createVariable(token, { entity, id }, draft).catch((e) =>
+    const variable = await createVariable(token, { entity, id }, draft).catch((e: unknown) =>
       explainForbidden(e, "change"),
     );
     store.patch(token, { entity, id }, (vars) => [...vars, variable]);
@@ -189,22 +198,24 @@ export function createApp({
   });
 
   app.put("/api/variables", async (c) => {
-    const token = requireToken(c);
+    const token = requireToken(c, getServerToken());
     const { entity, id, key, scope, changes } = parseUpdateRequest(await readJson(c.req.raw));
-    const variable = await updateVariable(token, { entity, id }, key, scope, changes).catch((e) =>
+    const variable = await updateVariable(token, { entity, id }, key, scope, changes).catch((e: unknown) =>
       explainForbidden(e, "change"),
     );
     store.patch(token, { entity, id }, (vars) =>
-      vars.map((v) => (sameVar(key, scope)(v) ? variable : v)),
+      vars.map((v) => (isSameVariable(key, scope)(v) ? variable : v)),
     );
     return c.json({ variable });
   });
 
   app.delete("/api/variables", async (c) => {
-    const token = requireToken(c);
+    const token = requireToken(c, getServerToken());
     const { entity, id, key, scope } = parseDeleteRequest(await readJson(c.req.raw));
-    await deleteVariable(token, { entity, id }, key, scope).catch((e) => explainForbidden(e, "change"));
-    store.patch(token, { entity, id }, (vars) => vars.filter((v) => !sameVar(key, scope)(v)));
+    await deleteVariable(token, { entity, id }, key, scope).catch((e: unknown) =>
+      explainForbidden(e, "change"),
+    );
+    store.patch(token, { entity, id }, (vars) => vars.filter((v) => !isSameVariable(key, scope)(v)));
     return c.json({ ok: true });
   });
 
@@ -213,7 +224,7 @@ export function createApp({
   );
 
   app.onError((e, c) => {
-    if (e instanceof HttpError) return c.json({ error: e.message }, e.status as 400);
+    if (e instanceof HttpError) return c.json({ error: e.message }, e.status);
     console.error(e);
     return c.json({ error: "Unexpected server error" }, 500);
   });

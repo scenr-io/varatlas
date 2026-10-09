@@ -1,5 +1,8 @@
+/* The shared layout for every "this token can't be used" message: a token check, fixes and actions. */
+
 import type { ComponentChildren } from "preact";
 import { Check, CircleHelp, ExternalLink, Minus, RefreshCw, X } from "lucide-preact";
+import { Button, buttonClass } from "@/components/ui/Button";
 import { ScenrCredit } from "@/components/ui/ScenrCredit";
 import { newTokenUrl } from "@/access";
 import type { AuthStatus } from "@shared/types";
@@ -31,7 +34,9 @@ function TokenChecks({ checks }: { checks: TokenCheck[] }) {
               <Icon className={`h-4 w-4 ${className}`} aria-label={label} role="img" />
             </span>
             <div className="min-w-0">
-              <p className={`text-[13px] ${c.status === "fail" ? "font-semibold text-fg" : "text-fg-2"}`}>{c.label}</p>
+              <p className={`text-[13px] ${c.status === "fail" ? "font-semibold text-fg" : "text-fg-2"}`}>
+                {c.label}
+              </p>
               {c.detail && <p className="mt-0.5 text-xs leading-relaxed text-fg-3">{c.detail}</p>}
             </div>
           </li>
@@ -49,10 +54,7 @@ const scopeList = (scopes: string[] | null | undefined) =>
   ) : undefined;
 
 /** The token check rows for a given failure point. */
-export function checksFor(
-  auth: AuthStatus,
-  failing: "accepted" | "read" | "role" | "groups",
-): TokenCheck[] {
+export function checksFor(auth: AuthStatus, failing: "accepted" | "read" | "role" | "groups"): TokenCheck[] {
   const scopes = auth.token?.scopes ?? null;
   const known = scopes !== null;
   const order = ["accepted", "read", "groups", "role"] as const;
@@ -68,7 +70,8 @@ export function checksFor(
     },
     {
       label: "Scope to read CI/CD variables: api or read_api",
-      detail: scopeList(scopes) ?? (at > 1 && !known ? "GitLab didn't report scopes for this token." : undefined),
+      detail:
+        scopeList(scopes) ?? (at > 1 && !known ? "GitLab didn't report scopes for this token." : undefined),
       status: status(1, known || at <= 1),
     },
     {
@@ -149,35 +152,19 @@ export function AccessScreen({ children }: { children: ComponentChildren }) {
 
 export function CreateTokenLink({ baseUrl, scope = "api" }: { baseUrl: string; scope?: "api" | "read_api" }) {
   return (
-    <a
-      href={newTokenUrl(baseUrl, scope)}
-      target="_blank"
-      rel="noreferrer"
-      className="flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-ink transition-opacity hover:opacity-90"
-    >
+    <a href={newTokenUrl(baseUrl, scope)} target="_blank" rel="noreferrer" className={buttonClass("primary")}>
       Create a token in GitLab
       <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
     </a>
   );
 }
 
-export function SecondaryButton({ onClick, children }: { onClick: () => void; children: ComponentChildren }) {
-  return (
-    <button
-      onClick={onClick}
-      className="flex items-center gap-1.5 rounded-lg border border-line-strong px-4 py-2 text-sm font-medium text-fg transition-colors hover:bg-raised"
-    >
-      {children}
-    </button>
-  );
-}
-
 export function CheckAgain({ onClick }: { onClick: () => void }) {
   return (
-    <SecondaryButton onClick={onClick}>
+    <Button onClick={onClick}>
       <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
       Check again
-    </SecondaryButton>
+    </Button>
   );
 }
 
@@ -185,9 +172,10 @@ export function CheckAgain({ onClick }: { onClick: () => void }) {
 export function EnvTokenFix() {
   return (
     <p>
-      This token comes from <span className="font-mono text-fg">GITLAB_TOKEN</span> on the server, so it can't be
-      changed here. Set a new one where varatlas runs (for example in <span className="font-mono text-fg">.env.local</span>{" "}
-      or your container's environment), restart varatlas, then check again.
+      This token comes from <span className="font-mono text-fg">GITLAB_TOKEN</span> on the server, so it can't
+      be changed here. Set a new one where varatlas runs (for example in{" "}
+      <span className="font-mono text-fg">.env.local</span> or your container's environment), restart
+      varatlas, then check again.
     </p>
   );
 }

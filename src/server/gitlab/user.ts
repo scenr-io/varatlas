@@ -1,3 +1,5 @@
+/* Who the token belongs to, and what the token itself is allowed to do. */
+
 import type { GitLabUser, TokenAccess } from "../../shared/types";
 import { glJson } from "./client";
 

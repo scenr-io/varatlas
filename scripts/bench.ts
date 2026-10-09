@@ -9,23 +9,50 @@ import { filterRows, toRows } from "../src/web/rows";
 
 const impl = insights;
 
+/** `value`, or an error naming what's missing. */
+function must<T>(value: T | undefined, what: string): T {
+  if (value === undefined) throw new Error(`bench: missing ${what}`);
+  return value;
+}
+
 function syntheticOrg(groups: number, projects: number, vars: number) {
   const tree: OrgTree = { groups: [], projects: [] };
   for (let i = 0; i < groups; i++) {
     const parent = i === 0 ? null : Math.floor((i - 1) / 5);
-    const path = parent === null ? "acme" : `${tree.groups[parent].full_path}/g${i}`;
+    const path = parent === null ? "acme" : `${must(tree.groups[parent], "parent group").full_path}/g${i}`;
     tree.groups.push({ id: i, name: `g${i}`, full_path: path, parent_id: parent, web_url: "" });
   }
   for (let i = 0; i < projects; i++) {
-    const g = tree.groups[i % groups];
-    tree.projects.push({ id: 10_000 + i, name: `p${i}`, path_with_namespace: `${g.full_path}/p${i}`, namespace_id: g.id, web_url: "", archived: false });
+    const g = must(tree.groups[i % groups], "group");
+    tree.projects.push({
+      id: 10_000 + i,
+      name: `p${i}`,
+      path_with_namespace: `${g.full_path}/p${i}`,
+      namespace_id: g.id,
+      web_url: "",
+      archived: false,
+    });
   }
   const entities: EntityVariables[] = [
-    ...tree.groups.map((g) => ({ entity: "group" as const, id: g.id, path: g.full_path, name: g.name, web_url: "", variables: [] })),
-    ...tree.projects.map((p) => ({ entity: "project" as const, id: p.id, path: p.path_with_namespace, name: p.name, web_url: "", variables: [] })),
+    ...tree.groups.map((g) => ({
+      entity: "group" as const,
+      id: g.id,
+      path: g.full_path,
+      name: g.name,
+      web_url: "",
+      variables: [],
+    })),
+    ...tree.projects.map((p) => ({
+      entity: "project" as const,
+      id: p.id,
+      path: p.path_with_namespace,
+      name: p.name,
+      web_url: "",
+      variables: [],
+    })),
   ] as EntityVariables[];
   for (let i = 0; i < vars; i++) {
-    entities[(i * 7919) % entities.length].variables.push({
+    must(entities[(i * 7919) % entities.length], "entity").variables.push({
       key: `KEY_${i % 1500}${i % 3 === 0 ? "_TOKEN" : ""}`,
       value: `v${i % 4}`,
       variable_type: "env_var",
@@ -50,8 +77,8 @@ function time(label: string, fn: () => unknown, runs = 5): number {
 
 const { tree, entities } = syntheticOrg(500, 3000, 20_000);
 const rows = toRows(entities);
-const group = tree.groups[7];
-const project = tree.projects[1234];
+const group = must(tree.groups[7], "group 7");
+const project = must(tree.projects[1234], "project 1234");
 console.log(`${rows.length} variables, ${tree.groups.length} groups, ${tree.projects.length} projects\n`);
 
 console.log("Once per data load");

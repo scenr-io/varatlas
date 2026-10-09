@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { EntityVariables, GitLabVariable, OrgTree } from "@shared/types";
+import type { OrgTree } from "@shared/types";
+import { defined, entity as ent, variable as v } from "../../test/helpers";
 import {
   effectiveRows,
   findFindings,
@@ -14,26 +15,6 @@ import {
 import { toRows } from "./rows";
 import { looksSecret } from "./secrets";
 
-const v = (key: string, over: Partial<GitLabVariable> = {}): GitLabVariable => ({
-  key,
-  value: "v",
-  variable_type: "env_var",
-  protected: false,
-  masked: false,
-  raw: false,
-  environment_scope: "*",
-  description: null,
-  ...over,
-});
-
-const ent = (
-  entity: "group" | "project",
-  id: number,
-  path: string,
-  variables: GitLabVariable[],
-  error?: string,
-): EntityVariables => ({ entity, id, path, name: path.split("/").pop()!, web_url: "", variables, error });
-
 const tree: OrgTree = {
   groups: [
     { id: 1, name: "acme", full_path: "acme", parent_id: null, web_url: "" },
@@ -41,13 +22,30 @@ const tree: OrgTree = {
     { id: 3, name: "web", full_path: "acme/web", parent_id: 1, web_url: "" },
   ],
   projects: [
-    { id: 10, name: "api", path_with_namespace: "acme/platform/api", namespace_id: 2, web_url: "", archived: false },
-    { id: 11, name: "site", path_with_namespace: "acme/web/site", namespace_id: 3, web_url: "", archived: false },
+    {
+      id: 10,
+      name: "api",
+      path_with_namespace: "acme/platform/api",
+      namespace_id: 2,
+      web_url: "",
+      archived: false,
+    },
+    {
+      id: 11,
+      name: "site",
+      path_with_namespace: "acme/web/site",
+      namespace_id: 3,
+      web_url: "",
+      archived: false,
+    },
   ],
 };
 
 const entities = [
-  ent("group", 1, "acme", [v("REGISTRY", { value: "r1", protected: true }), v("API_TOKEN", { masked: true })]),
+  ent("group", 1, "acme", [
+    v("REGISTRY", { value: "r1", protected: true }),
+    v("API_TOKEN", { masked: true }),
+  ]),
   ent("group", 2, "acme/platform", [v("DB_URL", { value: "postgres://a" })]),
   ent("group", 3, "acme/web", [v("SENTRY_DSN", { value: "same" })]),
   ent("project", 10, "acme/platform/api", [
@@ -88,7 +86,7 @@ describe("summarizeKeys", () => {
     const byKey = Object.fromEntries(summarizeKeys(rows).map((k) => [k.key, k]));
     expect(byKey.REGISTRY).toMatchObject({ locations: 2, values: "different" });
     expect(byKey.SENTRY_DSN).toMatchObject({ locations: 2, values: "same", secret: true });
-    expect(byKey.DEPLOY_KEY.scopes).toEqual(["production"]);
+    expect(byKey.DEPLOY_KEY?.scopes).toEqual(["production"]);
   });
 });
 
@@ -124,7 +122,11 @@ describe("rowsInScope", () => {
   });
 
   it("gives a project its own and inherited variables", () => {
-    expect(paths({ entity: "project", path: "acme/web/site" })).toEqual(["acme", "acme/web", "acme/web/site"]);
+    expect(paths({ entity: "project", path: "acme/web/site" })).toEqual([
+      "acme",
+      "acme/web",
+      "acme/web/site",
+    ]);
   });
 
   it("covers everything without a selection", () => {
@@ -137,17 +139,17 @@ describe("findFindings", () => {
 
   it("finds unmasked and unprotected secrets", () => {
     // API_TOKEN is masked; SENTRY_DSN x2 and DEPLOY_KEY x2 are not.
-    expect(findings["unmasked-secrets"].count).toBe(4);
-    expect(findings["unprotected-secrets"].count).toBe(5);
+    expect(findings["unmasked-secrets"]?.count).toBe(4);
+    expect(findings["unprotected-secrets"]?.count).toBe(5);
   });
 
   it("separates drift from shareable copies, ignoring inherited overrides", () => {
-    expect(findings.drift.count).toBe(1); // DEPLOY_KEY[production] in two unrelated projects
-    expect(findings.copies.count).toBe(1); // SENTRY_DSN identical in acme/web and acme/platform/api
+    expect(findings.drift?.count).toBe(1); // DEPLOY_KEY[production] in two unrelated projects
+    expect(findings.copies?.count).toBe(1); // SENTRY_DSN identical in acme/web and acme/platform/api
   });
 
   it("finds overrides of inherited variables", () => {
-    expect(findings.overrides.count).toBe(2); // REGISTRY and DB_URL on the api project
+    expect(findings.overrides?.count).toBe(2); // REGISTRY and DB_URL on the api project
   });
 
   it("reports unreadable places with their paths", () => {
@@ -162,9 +164,9 @@ describe("statistics", () => {
   });
 
   it("totals each group's own, subgroup and project variables", () => {
-    const acme = groupStats(tree, rows).find((g) => g.path === "acme")!;
+    const acme = defined(groupStats(tree, rows).find((g) => g.path === "acme"));
     expect(acme).toMatchObject({ depth: 0, own: 2, inSubgroups: 2, inProjects: 5, projects: 2 });
-    const platform = groupStats(tree, rows).find((g) => g.path === "acme/platform")!;
+    const platform = defined(groupStats(tree, rows).find((g) => g.path === "acme/platform"));
     expect(platform).toMatchObject({ depth: 1, own: 1, inProjects: 4, projects: 1 });
   });
 });

@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { jsonResponse, stubFetch } from "../../../test/helpers";
 import { discoverTree, isExcludedPath, listMemberGroups } from "./discovery";
 
 const group = (id: number, full_path: string, parent_id: number | null) => ({
@@ -20,15 +21,10 @@ const project = (id: number, path: string, namespaceId: number) => ({
 
 /** Answer GitLab API calls by path prefix. */
 function routeFetch(routes: Record<string, unknown[]>) {
-  vi.stubGlobal(
-    "fetch",
-    vi.fn(async (url: string) => {
-      const path = new URL(url).pathname.replace("/api/v4", "");
-      const body = routes[path];
-      if (!body) return new Response("{}", { status: 404 });
-      return new Response(JSON.stringify(body), { status: 200 });
-    }),
-  );
+  stubFetch((url) => {
+    const body = routes[new URL(url).pathname.replace("/api/v4", "")];
+    return body ? jsonResponse(body) : jsonResponse({}, { status: 404 });
+  });
 }
 
 afterEach(() => {
@@ -54,16 +50,12 @@ describe("discoverTree", () => {
 
     const tree = await discoverTree("t", await listMemberGroups("t"));
 
-    expect(tree.groups.map((g) => g.full_path)).toEqual([
-      "acme",
-      "acme/platform",
-      "acme/platform/deep",
-    ]);
+    expect(tree.groups.map((g) => g.full_path)).toEqual(["acme", "acme/platform", "acme/platform/deep"]);
     expect(tree.projects.map((p) => p.path_with_namespace)).toEqual([
       "acme/platform/api",
       "acme/platform/deep/x",
     ]);
-    expect(tree.projects[0].namespace_id).toBe(2);
+    expect(tree.projects[0]?.namespace_id).toBe(2);
   });
 
   it("treats a group with an invisible parent as a root", async () => {

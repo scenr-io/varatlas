@@ -67,6 +67,18 @@ image:
 container:
     docker run --rm -p 127.0.0.1:{{port}}:3131 -e GITLAB_TOKEN varatlas:local
 
-# Lint, typecheck and test
+# Everything CI checks: formatting, lint, types, tests with coverage, dead code
 check:
     pnpm check
+
+# Format all files
+format:
+    pnpm format
+
+# Unit, component and integration tests
+test:
+    pnpm test
+
+# Browser tests against a production build in demo mode
+e2e:
+    pnpm build && pnpm test:e2e

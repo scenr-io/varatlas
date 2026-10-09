@@ -56,13 +56,7 @@ export function filterRows<R extends Row>(rows: R[], f: Filters): R[] {
     if (f.attrs.has("secret") && !looksSecret(r.v.key)) return false;
     if (f.scope !== "all" && r.v.environment_scope !== f.scope) return false;
     if (q) {
-      const haystack = [
-        r.v.key,
-        r.v.value ?? "",
-        r.v.environment_scope,
-        r.path,
-        r.v.description ?? "",
-      ]
+      const haystack = [r.v.key, r.v.value ?? "", r.v.environment_scope, r.path, r.v.description ?? ""]
         .join("\n")
         .toLowerCase();
       if (!haystack.includes(q)) return false;

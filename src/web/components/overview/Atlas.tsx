@@ -1,13 +1,9 @@
+/* The org atlas chart on the overview: where variables are defined across the hierarchy. */
+
 import { useState } from "preact/hooks";
+import { pct, plural, px } from "@/format";
 import type { GroupStat } from "@/insights";
-
-const pct = (n: number, max: number) => `${max === 0 ? 0 : (n / max) * 100}%`;
-const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
-
-export interface AtlasLabels {
-  first: string;
-  second: string;
-}
+import type { AtlasCopy } from "@/overview";
 
 /** What the readout says about one row. */
 function describe(s: GroupStat): string {
@@ -31,20 +27,21 @@ export function Atlas({
   onSelect,
 }: {
   stats: GroupStat[];
-  labels: AtlasLabels;
+  labels: AtlasCopy["labels"];
   onSelect: (groupId: number) => void;
 }) {
   const shown = stats.filter((s) => s.own + s.inSubgroups + s.inProjects > 0);
   const hidden = stats.length - shown.length;
   const [active, setActive] = useState<GroupStat | null>(null);
 
-  if (shown.length === 0) {
+  const first = shown[0];
+  if (!first) {
     return <p className="py-6 text-sm text-fg-2">No variables are defined in this part of the tree.</p>;
   }
 
   const max = Math.max(...shown.map((s) => s.own + s.inSubgroups + s.inProjects));
   const minDepth = Math.min(...shown.map((s) => s.depth));
-  const readout = active ?? shown[0];
+  const readout = active ?? first;
 
   return (
     <div>
@@ -84,7 +81,7 @@ export function Atlas({
               >
                 <span
                   className={`truncate text-[13px] ${s.isProject ? "font-mono text-xs text-fg" : "text-fg-2"}`}
-                  style={{ paddingLeft: `${(s.depth - minDepth) * 12}px` }}
+                  style={{ paddingLeft: px((s.depth - minDepth) * 12) }}
                 >
                   {s.name}
                 </span>
@@ -95,7 +92,9 @@ export function Atlas({
                       style={{ width: pct(s.own, max) }}
                     />
                   )}
-                  {below > 0 && <span className="h-2 rounded-r bg-series-2" style={{ width: pct(below, max) }} />}
+                  {below > 0 && (
+                    <span className="h-2 rounded-r bg-series-2" style={{ width: pct(below, max) }} />
+                  )}
                 </span>
                 <span className="text-right text-xs tabular-nums text-fg-2">{total}</span>
               </button>

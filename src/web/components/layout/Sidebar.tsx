@@ -1,6 +1,9 @@
+/* Left rail: the group and project tree to scope the views, plus account and project links. */
+
 import type { ComponentChildren } from "preact";
 import { useMemo, useState } from "preact/hooks";
 import { Bug, ChevronRight, Code, FolderTree, LogOut, Package, RefreshCw } from "lucide-preact";
+import { iconButtonClass } from "@/components/ui/Button";
 import { ScenrCredit } from "@/components/ui/ScenrCredit";
 import { NEW_ISSUE_URL, REPO_URL } from "@/links";
 import { buildGroupTree, type GroupNode } from "@/tree";
@@ -59,7 +62,7 @@ function Count({ n }: { n: number }) {
   return <span className="ml-auto pl-2 text-xs tabular-nums text-fg-3">{n}</span>;
 }
 
-export default function Sidebar({
+export function Sidebar({
   tree,
   varCounts,
   selection,
@@ -200,7 +203,9 @@ export default function Sidebar({
           </div>
         )}
         <div className="min-w-0">
-          <p className="truncate text-[13px] font-medium leading-tight text-fg">{user?.name || "Unknown user"}</p>
+          <p className="truncate text-[13px] font-medium leading-tight text-fg">
+            {user?.name || "Unknown user"}
+          </p>
           {user?.username && <p className="truncate font-mono text-[11px] text-fg-3">@{user.username}</p>}
         </div>
         {canLogout && (
@@ -208,7 +213,7 @@ export default function Sidebar({
             onClick={onLogout}
             title="Disconnect token"
             aria-label="Disconnect token"
-            className="ml-auto rounded-md p-1.5 text-fg-3 transition-colors hover:bg-surface hover:text-fg"
+            className={`ml-auto ${iconButtonClass()}`}
           >
             <LogOut className="h-4 w-4" />
           </button>

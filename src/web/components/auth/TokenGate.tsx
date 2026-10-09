@@ -1,10 +1,14 @@
+/* The connect screen, shown until the server has a usable token. */
+
 import { useState } from "preact/hooks";
 import { KeyRound, Loader2, ShieldCheck } from "lucide-preact";
+import { buttonClass } from "@/components/ui/Button";
 import { ScenrCredit } from "@/components/ui/ScenrCredit";
 import { useAutoFocus } from "@/hooks/useAutoFocus";
 import { api } from "@/api";
 
-export default function TokenGate({
+/** The first screen: paste a GitLab token. */
+export function TokenGate({
   baseUrl,
   onConnected,
   notice,
@@ -28,7 +32,7 @@ export default function TokenGate({
       await api.connect(token);
       onConnected();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not validate the token");
+      setError(err instanceof Error ? err.message : "Couldn't check the token");
     } finally {
       setBusy(false);
     }
@@ -39,17 +43,20 @@ export default function TokenGate({
       <div className="w-full max-w-[400px]">
         <h1 className="font-display text-5xl leading-none text-fg">varatlas</h1>
         <p className="mt-3 text-[15px] leading-relaxed text-fg-2">
-          Every CI/CD variable in your GitLab org, on one map: where it's defined, what each
-          project inherits, and what needs fixing.
+          Every CI/CD variable in your GitLab org, on one map: where it's defined, what each project inherits,
+          and what needs fixing.
         </p>
 
         {notice && (
-          <p className="mt-6 rounded-lg border border-line-strong px-4 py-3 text-sm leading-relaxed text-fg" role="alert">
+          <p
+            className="mt-6 rounded-lg border border-line-strong px-4 py-3 text-sm leading-relaxed text-fg"
+            role="alert"
+          >
             {notice}
           </p>
         )}
 
-        <form onSubmit={submit} className="mt-8 rounded-xl border border-line bg-surface p-5">
+        <form onSubmit={(e) => void submit(e)} className="mt-8 rounded-xl border border-line bg-surface p-5">
           <label htmlFor="token" className="mb-2 flex items-center gap-2 text-sm font-medium text-fg">
             <KeyRound className="h-4 w-4 text-accent" aria-hidden="true" />
             Personal access token
@@ -72,7 +79,7 @@ export default function TokenGate({
           <button
             type="submit"
             disabled={busy || !token.trim()}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-accent-ink transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+            className={buttonClass("primary", "mt-4 w-full py-2.5")}
           >
             {busy && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
             {busy ? "Checking token…" : "Connect to GitLab"}
@@ -82,8 +89,8 @@ export default function TokenGate({
             <ShieldCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-good" aria-hidden="true" />
             <span>
               Use the <code className="font-mono text-fg-2">api</code> scope, or{" "}
-              <code className="font-mono text-fg-2">read_api</code> to browse without editing. The token
-              stays on this server in an httpOnly cookie.
+              <code className="font-mono text-fg-2">read_api</code> to browse without editing. The token stays
+              on this server in an httpOnly cookie.
             </span>
           </p>
         </form>

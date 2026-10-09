@@ -115,7 +115,13 @@ const PROJECTS: [path: string, vars: Spec[] | "no-access"][] = [
     [
       ["NEXT_PUBLIC_API_URL", "https://api.northwind.example"],
       ["STRIPE_PUBLISHABLE_KEY", "demo-publishable-key"],
-      ["SENTRY_DSN", "https://demo@sentry.northwind.example/7", "m", "*", "Storefront has its own Sentry project"],
+      [
+        "SENTRY_DSN",
+        "https://demo@sentry.northwind.example/7",
+        "m",
+        "*",
+        "Storefront has its own Sentry project",
+      ],
     ],
   ],
   [
@@ -158,9 +164,14 @@ const parentOf = (path: string) => (path.includes("/") ? path.slice(0, path.last
 /** A fresh copy of the demo org, in the same shape the GitLab loader produces. */
 export function demoOrg(): { tree: OrgTree; entities: EntityVariables[] } {
   const groupIds = new Map(GROUPS.map(([path], i) => [path, i + 1]));
+  const groupId = (path: string | null): number => {
+    const id = groupIds.get(path ?? "");
+    if (id === undefined) throw new Error(`Demo data error: no group "${String(path)}"`);
+    return id;
+  };
   const tree: OrgTree = {
     groups: GROUPS.map(([path]) => ({
-      id: groupIds.get(path)!,
+      id: groupId(path),
       name: nameOf(path),
       full_path: path,
       parent_id: groupIds.get(parentOf(path) ?? "") ?? null,
@@ -170,7 +181,7 @@ export function demoOrg(): { tree: OrgTree; entities: EntityVariables[] } {
       id: 100 + i,
       name: nameOf(path),
       path_with_namespace: path,
-      namespace_id: groupIds.get(parentOf(path)!)!,
+      namespace_id: groupId(parentOf(path)),
       web_url: `${BASE_URL}/${path}`,
       archived: false,
     })),
@@ -178,7 +189,7 @@ export function demoOrg(): { tree: OrgTree; entities: EntityVariables[] } {
   const entities: EntityVariables[] = [
     ...GROUPS.map(([path, vars]) => ({
       entity: "group" as const,
-      id: groupIds.get(path)!,
+      id: groupId(path),
       path,
       name: nameOf(path),
       web_url: `${BASE_URL}/groups/${path}`,
@@ -204,7 +215,11 @@ export function createDemo(): { backend: Backend; fetchOrg: () => Promise<OrgDat
   function entity(target: EntityRef): EntityVariables {
     const e = org.entities.find((x) => x.entity === target.entity && x.id === target.id);
     if (!e) throw new HttpError(404, "That group or project isn't part of the demo");
-    if (e.error) throw new HttpError(403, "You need the Maintainer role on this group or project to change its variables.");
+    if (e.error)
+      throw new HttpError(
+        403,
+        "You need the Maintainer role on this group or project to change its variables.",
+      );
     return e;
   }
   const find = (e: EntityVariables, key: string, scope: string) =>
@@ -239,8 +254,8 @@ export function createDemo(): { backend: Backend; fetchOrg: () => Promise<OrgDat
     async updateVariable(_token, target, key, scope, changes: VariableChanges) {
       const e = entity(target);
       const i = find(e, key, scope);
-      if (i < 0) throw new HttpError(404, `${key} doesn't exist for that environment`);
       const current = e.variables[i];
+      if (!current) throw new HttpError(404, `${key} doesn't exist for that environment`);
       const updated: GitLabVariable = {
         ...current,
         ...changes,

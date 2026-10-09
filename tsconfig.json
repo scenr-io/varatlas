@@ -16,10 +16,11 @@
     "noFallthroughCasesInSwitch": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
+    "noUncheckedIndexedAccess": true,
     "paths": {
       "@/*": ["./src/web/*"],
       "@shared/*": ["./src/shared/*"]
     }
   },
-  "include": ["src", "scripts", "*.config.ts"]
+  "include": ["src", "scripts", "test", "*.config.ts"]
 }

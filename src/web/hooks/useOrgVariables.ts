@@ -12,12 +12,10 @@ import type {
   VariableChanges,
   VariableDraft,
 } from "@shared/types";
+import { isSameVariable } from "@shared/variables";
 
 /** A cached snapshot older than this is refreshed in the background on open. */
 const STALE_MS = 30_000;
-
-const sameVar = (key: string, scope: string) => (v: GitLabVariable) =>
-  v.key === key && v.environment_scope === scope;
 
 export function useOrgVariables() {
   const [auth, setAuth] = useState<AuthStatus | null>(null);
@@ -25,12 +23,21 @@ export function useOrgVariables() {
   const [entities, setEntities] = useState<EntityVariables[] | null>(null);
   const [syncedAt, setSyncedAt] = useState<number | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  /** set when the browser can't reach the varatlas server at all */
+  const [connectionError, setConnectionError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
+  /** Ask the server who we are. Never throws: a failed request becomes `connectionError`. */
   const checkAuth = useCallback(async () => {
-    const status = await api.authStatus();
-    setAuth(status);
-    return status.configured;
+    try {
+      const status = await api.authStatus();
+      setAuth(status);
+      setConnectionError(null);
+      return status.configured;
+    } catch (e) {
+      setConnectionError(e instanceof Error ? e.message : "The varatlas server didn't respond");
+      return false;
+    }
   }, []);
 
   const load = useCallback(async (refresh: boolean): Promise<OrgVariables | null> => {
@@ -60,7 +67,7 @@ export function useOrgVariables() {
   const refresh = useCallback(() => load(true), [load]);
 
   useEffect(() => {
-    start();
+    void start();
   }, [start]);
 
   /** Apply `fn` to one entity's variable list in the local snapshot. */
@@ -81,17 +88,22 @@ export function useOrgVariables() {
   async function updateVariable(target: EntityRef, original: GitLabVariable, changes: VariableChanges) {
     const { key, environment_scope: scope } = original;
     const { variable } = await api.update({ ...target, key, scope, changes });
-    patch(target, (vars) => vars.map((v) => (sameVar(key, scope)(v) ? variable : v)));
+    patch(target, (vars) => vars.map((v) => (isSameVariable(key, scope)(v) ? variable : v)));
   }
 
   async function deleteVariable(target: EntityRef, original: GitLabVariable) {
     const { key, environment_scope: scope } = original;
     await api.remove({ ...target, key, scope });
-    patch(target, (vars) => vars.filter((v) => !sameVar(key, scope)(v)));
+    patch(target, (vars) => vars.filter((v) => !isSameVariable(key, scope)(v)));
   }
 
+  /** Forget the saved token. Never throws; a failed request shows up as `connectionError`. */
   async function disconnect() {
-    await api.disconnect();
+    try {
+      await api.disconnect();
+    } catch {
+      /* checkAuth below reports the connection problem */
+    }
     setAuth(null);
     setTree(null);
     setEntities(null);
@@ -105,6 +117,7 @@ export function useOrgVariables() {
     entities,
     syncedAt,
     loadError,
+    connectionError,
     refreshing,
     start,
     refresh,
@@ -114,3 +127,4 @@ export function useOrgVariables() {
     disconnect,
   };
 }
+export type OrgVariablesApi = ReturnType<typeof useOrgVariables>;

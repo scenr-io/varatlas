@@ -1,8 +1,10 @@
+/* The overview's smaller charts: protections, environment scopes and repeated keys. */
+
 import type { ComponentChildren } from "preact";
-import { Chip } from "@/components/ui/Badge";
+import { ConsistencyChip, consistencyLabel } from "@/components/ui/ConsistencyChip";
+import { pct, scopeLabel } from "@/format";
 import type { KeySummary, Posture } from "@/insights";
 
-const pct = (n: number, max: number) => `${max === 0 ? 0 : (n / max) * 100}%`;
 const MAX_BARS = 6;
 
 /** A thin bar on a baseline: 4px rounded data end, square at the start. */
@@ -49,7 +51,13 @@ export function ProtectionMeters({ posture }: { posture: Posture }) {
               {n} <span className="text-fg-3">of {posture.total}</span>
             </span>
           </div>
-          <div className="mt-1.5 h-2 rounded-r bg-track" role="meter" aria-valuenow={n} aria-valuemax={posture.total} aria-label={label}>
+          <div
+            className="mt-1.5 h-2 rounded-r bg-track"
+            role="meter"
+            aria-valuenow={n}
+            aria-valuemax={posture.total}
+            aria-label={label}
+          >
             <div className="h-2 rounded-r bg-series-1" style={{ width: pct(n, posture.total) }} />
           </div>
         </li>
@@ -66,8 +74,8 @@ export function ScopeBars({
   scopes: { scope: string; count: number }[];
   onPick: (scope: string) => void;
 }) {
-  if (scopes.length === 1) {
-    const [only] = scopes;
+  const only = scopes.length === 1 ? scopes[0] : undefined;
+  if (only) {
     return (
       <p className="text-[13px] leading-relaxed text-fg-2">
         {only.count === 1 ? "The only variable" : `All ${only.count} variables`}{" "}
@@ -95,7 +103,7 @@ export function ScopeBars({
             className="grid w-full grid-cols-[minmax(0,7.5rem)_minmax(0,1fr)_2rem] items-center gap-3 rounded-md px-1 py-1 text-left transition-colors hover:bg-raised/60"
             aria-label={`${s.count} variables in ${s.scope === "*" ? "all environments" : s.scope}. Show them.`}
           >
-            <span className="truncate font-mono text-xs text-fg-2">{s.scope === "*" ? "* (all)" : s.scope}</span>
+            <span className="truncate font-mono text-xs text-fg-2">{scopeLabel(s.scope)}</span>
             <Bar value={s.count} max={max} />
             <span className="text-right text-xs tabular-nums text-fg-2">{s.count}</span>
           </button>
@@ -109,12 +117,6 @@ export function ScopeBars({
     </ul>
   );
 }
-
-const VALUES = {
-  same: { tone: "neutral", label: "Same value" },
-  different: { tone: "warning", label: "Values differ" },
-  unreadable: { tone: "neutral", label: "Hidden values" },
-} as const;
 
 /** Keys defined in the most places, with whether their copies agree. */
 export function RepeatedKeys({ keys, onOpen }: { keys: KeySummary[]; onOpen: (key: string) => void }) {
@@ -130,14 +132,14 @@ export function RepeatedKeys({ keys, onOpen }: { keys: KeySummary[]; onOpen: (ke
           <button
             onClick={() => onOpen(k.key)}
             className="grid w-full grid-cols-[minmax(0,1fr)_4rem_auto] items-center gap-3 rounded-md px-1 py-1 text-left transition-colors hover:bg-raised/60"
-            aria-label={`${k.key}: defined in ${k.locations} places. ${VALUES[k.values].label}. Open details.`}
+            aria-label={`${k.key}: defined in ${k.locations} places. ${consistencyLabel(k.values)}. Open details.`}
           >
             <span className="truncate font-mono text-xs text-fg">{k.key}</span>
             <span className="flex items-center gap-2">
               <Bar value={k.locations} max={max} />
               <span className="text-xs tabular-nums text-fg-2">{k.locations}</span>
             </span>
-            <Chip tone={VALUES[k.values].tone}>{VALUES[k.values].label}</Chip>
+            <ConsistencyChip values={k.values} />
           </button>
         </li>
       ))}

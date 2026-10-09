@@ -22,7 +22,7 @@ describe("buildGroupTree", () => {
     });
 
     expect(roots.map((r) => r.name)).toEqual(["acme", "orphan"]);
-    expect(roots[0].children[0].name).toBe("platform");
-    expect(roots[0].children[0].projects).toEqual([{ id: 10, name: "api" }]);
+    expect(roots[0]?.children[0]?.name).toBe("platform");
+    expect(roots[0]?.children[0]?.projects).toEqual([{ id: 10, name: "api" }]);
   });
 });

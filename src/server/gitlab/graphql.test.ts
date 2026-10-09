@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { jsonResponse, stubFetch } from "../../../test/helpers";
 import { fetchOrgGraphQL, gidToNumber, toVariable } from "./graphql";
 
 const gvar = (key: string, over: Record<string, unknown> = {}) => ({
@@ -48,20 +49,20 @@ function fakeGitLab(opts: {
   projectsPages: Record<string, unknown>;
   rest?: Record<string, unknown[]>;
 }) {
-  const fetch = vi.fn(async (url: string, init?: RequestInit) => {
+  return stubFetch((url, init) => {
     if (url.endsWith("/api/graphql")) {
-      const { query, variables } = JSON.parse(String(init?.body));
+      const { query, variables } = JSON.parse(String(init?.body)) as {
+        query: string;
+        variables: { after: string | null };
+      };
       const cursor = variables.after ?? "start";
       const data = query.includes("descendantGroups")
         ? { group: opts.groupsPages[cursor] }
         : { group: { projects: opts.projectsPages[cursor] } };
-      return new Response(JSON.stringify({ data }), { status: 200 });
+      return jsonResponse({ data });
     }
-    const path = new URL(url).pathname.replace("/api/v4", "");
-    return new Response(JSON.stringify(opts.rest?.[path] ?? []), { status: 200 });
+    return jsonResponse(opts.rest?.[new URL(url).pathname.replace("/api/v4", "")] ?? []);
   });
-  vi.stubGlobal("fetch", fetch);
-  return fetch;
 }
 
 const root = { id: 1, name: "acme", full_path: "acme", parent_id: null, web_url: "" };
@@ -139,12 +140,30 @@ describe("fetchOrgGraphQL", () => {
 
   it("falls back to REST for entities with more variables than one page", async () => {
     const fetch = fakeGitLab({
-      groupsPages: { start: { ...group(1, "acme", null, vars([]) ), descendantGroups: page([]) } },
+      groupsPages: { start: { ...group(1, "acme", null, vars([])), descendantGroups: page([]) } },
       projectsPages: { start: page([project(10, "acme/api", 1, vars([gvar("A")], true))]) },
       rest: {
         "/projects/10/variables": [
-          { key: "A", value: "1", variable_type: "env_var", protected: false, masked: false, raw: false, environment_scope: "*", description: null },
-          { key: "B", value: "2", variable_type: "env_var", protected: false, masked: false, raw: false, environment_scope: "*", description: null },
+          {
+            key: "A",
+            value: "1",
+            variable_type: "env_var",
+            protected: false,
+            masked: false,
+            raw: false,
+            environment_scope: "*",
+            description: null,
+          },
+          {
+            key: "B",
+            value: "2",
+            variable_type: "env_var",
+            protected: false,
+            masked: false,
+            raw: false,
+            environment_scope: "*",
+            description: null,
+          },
         ],
       },
     });
@@ -177,10 +196,7 @@ describe("fetchOrgGraphQL", () => {
   });
 
   it("surfaces GraphQL errors so the caller can fall back to REST", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => new Response(JSON.stringify({ errors: [{ message: "Field 'hidden' doesn't exist" }] }))),
-    );
+    stubFetch(() => jsonResponse({ errors: [{ message: "Field 'hidden' doesn't exist" }] }));
     await expect(fetchOrgGraphQL("t", [root])).rejects.toThrow(/hidden/);
   });
 });
