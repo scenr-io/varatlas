@@ -47,7 +47,12 @@ export function ValueCell({ v, revealAll }: { v: GitLabVariable; revealAll: bool
           {shown ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
         </button>
       )}
-      <button onClick={copy} title="Copy value" aria-label={`Copy value of ${v.key}`} className={iconButton}>
+      <button
+        onClick={() => void copy()}
+        title="Copy value"
+        aria-label={`Copy value of ${v.key}`}
+        className={iconButton}
+      >
         {copied ? <Check className="h-3.5 w-3.5 text-good" /> : <Copy className="h-3.5 w-3.5" />}
       </button>
     </div>

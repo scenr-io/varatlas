@@ -27,7 +27,11 @@ export function createSnapshotStore(
   function remember(key: string, snap: OrgVariables) {
     cache.delete(key);
     cache.set(key, snap);
-    while (cache.size > MAX_TOKENS) cache.delete(cache.keys().next().value!);
+    // Maps iterate in insertion order, so the first key is the least recently loaded.
+    for (const oldest of cache.keys()) {
+      if (cache.size <= MAX_TOKENS) break;
+      cache.delete(oldest);
+    }
   }
 
   return {

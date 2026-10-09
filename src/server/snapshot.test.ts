@@ -48,8 +48,8 @@ describe("createSnapshotStore", () => {
     const load = vi.fn(async (token: string) => data(token));
     const store = createSnapshotStore(load);
 
-    expect((await store.get("one")).entities[0].variables[0].key).toBe("one");
-    expect((await store.get("two")).entities[0].variables[0].key).toBe("two");
+    expect((await store.get("one")).entities[0]?.variables[0]?.key).toBe("one");
+    expect((await store.get("two")).entities[0]?.variables[0]?.key).toBe("two");
     store.drop("one");
     await store.get("one");
     expect(load).toHaveBeenCalledTimes(3);
@@ -59,7 +59,7 @@ describe("createSnapshotStore", () => {
     const store = createSnapshotStore(async () => data());
     await store.get("t");
     store.patch("t", { entity: "project", id: 1 }, (vars) => vars.filter((v) => v.key !== "A"));
-    expect((await store.get("t")).entities[0].variables).toEqual([]);
+    expect((await store.get("t")).entities[0]?.variables).toEqual([]);
   });
 
   it("does not cache failed loads", async () => {

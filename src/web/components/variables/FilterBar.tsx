@@ -59,8 +59,9 @@ export function FilterBar(p: Props) {
   // "/" jumps to search, as in GitLab and GitHub.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      if (e.key === "/" && !["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) {
+      const typing =
+        e.target instanceof HTMLElement && ["INPUT", "TEXTAREA", "SELECT"].includes(e.target.tagName);
+      if (e.key === "/" && !typing) {
         e.preventDefault();
         search.current?.focus();
       }

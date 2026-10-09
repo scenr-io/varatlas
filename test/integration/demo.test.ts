@@ -9,7 +9,7 @@ import { createDemo, demoOrg } from "../../src/server/demo";
 import { createSnapshotStore } from "../../src/server/snapshot";
 import { findFindings, summarizeKeys } from "../../src/web/insights";
 import { toRows } from "../../src/web/rows";
-import { apiRequest } from "../helpers";
+import { apiRequest, defined } from "../helpers";
 
 describe("demo org", () => {
   const { tree, entities } = demoOrg();
@@ -104,7 +104,10 @@ describe("demo backend", () => {
 
   it("refuses changes where the demo user has no access", async () => {
     const { entities } = demoOrg();
-    const locked = entities.find((e) => e.error)!;
+    const locked = defined(
+      entities.find((e) => e.error),
+      "a no-access project",
+    );
     const res = await app().request(
       apiRequest("/api/variables", {
         method: "DELETE",

@@ -164,9 +164,14 @@ const parentOf = (path: string) => (path.includes("/") ? path.slice(0, path.last
 /** A fresh copy of the demo org, in the same shape the GitLab loader produces. */
 export function demoOrg(): { tree: OrgTree; entities: EntityVariables[] } {
   const groupIds = new Map(GROUPS.map(([path], i) => [path, i + 1]));
+  const groupId = (path: string | null): number => {
+    const id = groupIds.get(path ?? "");
+    if (id === undefined) throw new Error(`Demo data error: no group "${String(path)}"`);
+    return id;
+  };
   const tree: OrgTree = {
     groups: GROUPS.map(([path]) => ({
-      id: groupIds.get(path)!,
+      id: groupId(path),
       name: nameOf(path),
       full_path: path,
       parent_id: groupIds.get(parentOf(path) ?? "") ?? null,
@@ -176,7 +181,7 @@ export function demoOrg(): { tree: OrgTree; entities: EntityVariables[] } {
       id: 100 + i,
       name: nameOf(path),
       path_with_namespace: path,
-      namespace_id: groupIds.get(parentOf(path)!)!,
+      namespace_id: groupId(parentOf(path)),
       web_url: `${BASE_URL}/${path}`,
       archived: false,
     })),
@@ -184,7 +189,7 @@ export function demoOrg(): { tree: OrgTree; entities: EntityVariables[] } {
   const entities: EntityVariables[] = [
     ...GROUPS.map(([path, vars]) => ({
       entity: "group" as const,
-      id: groupIds.get(path)!,
+      id: groupId(path),
       path,
       name: nameOf(path),
       web_url: `${BASE_URL}/groups/${path}`,
@@ -249,8 +254,8 @@ export function createDemo(): { backend: Backend; fetchOrg: () => Promise<OrgDat
     async updateVariable(_token, target, key, scope, changes: VariableChanges) {
       const e = entity(target);
       const i = find(e, key, scope);
-      if (i < 0) throw new HttpError(404, `${key} doesn't exist for that environment`);
       const current = e.variables[i];
+      if (!current) throw new HttpError(404, `${key} doesn't exist for that environment`);
       const updated: GitLabVariable = {
         ...current,
         ...changes,

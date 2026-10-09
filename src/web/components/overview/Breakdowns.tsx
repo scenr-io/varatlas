@@ -72,8 +72,8 @@ export function ScopeBars({
   scopes: { scope: string; count: number }[];
   onPick: (scope: string) => void;
 }) {
-  if (scopes.length === 1) {
-    const [only] = scopes;
+  const only = scopes.length === 1 ? scopes[0] : undefined;
+  if (only) {
     return (
       <p className="text-[13px] leading-relaxed text-fg-2">
         {only.count === 1 ? "The only variable" : `All ${only.count} variables`}{" "}

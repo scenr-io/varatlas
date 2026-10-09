@@ -55,7 +55,7 @@ describe("discoverTree", () => {
       "acme/platform/api",
       "acme/platform/deep/x",
     ]);
-    expect(tree.projects[0].namespace_id).toBe(2);
+    expect(tree.projects[0]?.namespace_id).toBe(2);
   });
 
   it("treats a group with an invisible parent as a root", async () => {

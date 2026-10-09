@@ -5,14 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Drawer } from "@/components/ui/Drawer";
 import { useAutoFocus } from "@/hooks/useAutoFocus";
 import { KEY_PATTERN } from "@shared/variables";
-import type {
-  EntityRef,
-  EntityType,
-  GitLabVariable,
-  OrgTree,
-  VariableDraft,
-  VariableType,
-} from "@shared/types";
+import type { EntityRef, GitLabVariable, OrgTree, VariableDraft, VariableType } from "@shared/types";
 
 export interface DrawerState {
   mode: "create" | "edit";
@@ -110,9 +103,11 @@ export function VariableDrawer({ state, tree, busy, onClose, onSubmit }: Props) 
   function submit(e: Event) {
     e.preventDefault();
     if (!canSubmit) return;
+    // The "Where" select's value is "group:12" or "project:34".
     const [entity, id] = target.split(":");
+    if (entity !== "group" && entity !== "project") return;
     onSubmit(
-      { entity: entity as EntityType, id: Number(id) },
+      { entity, id: Number(id) },
       {
         key,
         value,

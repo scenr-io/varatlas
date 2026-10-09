@@ -67,7 +67,7 @@ export function useOrgVariables() {
   const refresh = useCallback(() => load(true), [load]);
 
   useEffect(() => {
-    start();
+    void start();
   }, [start]);
 
   /** Apply `fn` to one entity's variable list in the local snapshot. */

@@ -1,7 +1,7 @@
 /* Low-level GitLab client (REST v4 + GraphQL). Server-side only: the token never reaches the browser. */
 
 import { gitlabBaseUrl } from "../config";
-import { HttpError } from "../http";
+import { HttpError, toStatus } from "../http";
 
 export class GitLabError extends HttpError {}
 
@@ -35,23 +35,29 @@ async function request(token: string, url: string, init?: RequestInit): Promise<
 
 const restUrl = (path: string) => `${gitlabBaseUrl()}/api/v4${path}`;
 
+/** A property of a parsed JSON value, or undefined when it isn't an object. */
+function field(value: unknown, name: string): unknown {
+  return typeof value === "object" && value !== null ? (value as Record<string, unknown>)[name] : undefined;
+}
+
 async function toError(res: Response): Promise<GitLabError> {
   let message = `GitLab API ${res.status}`;
   try {
-    const body = await res.json();
-    const detail = body?.message ?? body?.error;
+    const body: unknown = await res.json();
+    const detail = field(body, "message") ?? field(body, "error");
     if (typeof detail === "string") message = detail;
-    else if (detail) message = JSON.stringify(detail);
+    else if (detail !== undefined && detail !== null) message = JSON.stringify(detail);
   } catch {
     /* keep default */
   }
-  return new GitLabError(res.status, message);
+  return new GitLabError(toStatus(res.status), message);
 }
 
 export async function glJson<T>(token: string, path: string, init?: RequestInit): Promise<T> {
   const res = await request(token, restUrl(path), init);
   if (!res.ok) throw await toError(res);
   if (res.status === 204) return undefined as T;
+  // GitLab's documented response shape; callers type `T` from the API docs.
   return (await res.json()) as T;
 }
 

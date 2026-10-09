@@ -25,7 +25,8 @@ export function buildGroupTree(tree: OrgTree): GroupNode[] {
 
   const roots: GroupNode[] = [];
   for (const g of tree.groups) {
-    const node = nodes.get(g.id)!;
+    const node = nodes.get(g.id);
+    if (!node) continue;
     const parent = g.parent_id !== null ? nodes.get(g.parent_id) : undefined;
     if (parent) parent.children.push(node);
     else roots.push(node);

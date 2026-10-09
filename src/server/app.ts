@@ -104,7 +104,7 @@ export function createApp({
 
   app.use("/api/*", async (c, next) => {
     const verdict = checkApiRequest({ method: c.req.method, headers: c.req.raw.headers }, allowedHosts());
-    if (!verdict.ok) return c.json({ error: verdict.error }, verdict.status as 403);
+    if (!verdict.ok) return c.json({ error: verdict.error }, verdict.status);
     c.header("Cache-Control", "no-store");
     await next();
   });
@@ -146,7 +146,7 @@ export function createApp({
     const [userResult, info] = await Promise.all([
       whoAmI(token).then(
         (u) => ({ ok: true as const, u }),
-        (e) => ({ ok: false as const, e }),
+        (e: unknown) => ({ ok: false as const, e }),
       ),
       tokenAccess(token),
     ]);
@@ -183,14 +183,14 @@ export function createApp({
     const token = requireToken(c, getServerToken());
     const snapshot = await store
       .get(token, { fresh: c.req.query("refresh") === "1" })
-      .catch((e) => explainForbidden(e, "read"));
+      .catch((e: unknown) => explainForbidden(e, "read"));
     return c.json(snapshot);
   });
 
   app.post("/api/variables", async (c) => {
     const token = requireToken(c, getServerToken());
     const { entity, id, draft } = parseCreateRequest(await readJson(c.req.raw));
-    const variable = await createVariable(token, { entity, id }, draft).catch((e) =>
+    const variable = await createVariable(token, { entity, id }, draft).catch((e: unknown) =>
       explainForbidden(e, "change"),
     );
     store.patch(token, { entity, id }, (vars) => [...vars, variable]);
@@ -200,7 +200,7 @@ export function createApp({
   app.put("/api/variables", async (c) => {
     const token = requireToken(c, getServerToken());
     const { entity, id, key, scope, changes } = parseUpdateRequest(await readJson(c.req.raw));
-    const variable = await updateVariable(token, { entity, id }, key, scope, changes).catch((e) =>
+    const variable = await updateVariable(token, { entity, id }, key, scope, changes).catch((e: unknown) =>
       explainForbidden(e, "change"),
     );
     store.patch(token, { entity, id }, (vars) =>
@@ -212,7 +212,9 @@ export function createApp({
   app.delete("/api/variables", async (c) => {
     const token = requireToken(c, getServerToken());
     const { entity, id, key, scope } = parseDeleteRequest(await readJson(c.req.raw));
-    await deleteVariable(token, { entity, id }, key, scope).catch((e) => explainForbidden(e, "change"));
+    await deleteVariable(token, { entity, id }, key, scope).catch((e: unknown) =>
+      explainForbidden(e, "change"),
+    );
     store.patch(token, { entity, id }, (vars) => vars.filter((v) => !isSameVariable(key, scope)(v)));
     return c.json({ ok: true });
   });
@@ -222,7 +224,7 @@ export function createApp({
   );
 
   app.onError((e, c) => {
-    if (e instanceof HttpError) return c.json({ error: e.message }, e.status as 400);
+    if (e instanceof HttpError) return c.json({ error: e.message }, e.status);
     console.error(e);
     return c.json({ error: "Unexpected server error" }, 500);
   });

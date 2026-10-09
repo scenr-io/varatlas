@@ -54,7 +54,7 @@ export function TokenGate({
           </p>
         )}
 
-        <form onSubmit={submit} className="mt-8 rounded-xl border border-line bg-surface p-5">
+        <form onSubmit={(e) => void submit(e)} className="mt-8 rounded-xl border border-line bg-surface p-5">
           <label htmlFor="token" className="mb-2 flex items-center gap-2 text-sm font-medium text-fg">
             <KeyRound className="h-4 w-4 text-accent" aria-hidden="true" />
             Personal access token

@@ -28,13 +28,15 @@ function asObject(v: unknown, name: string): Obj {
 }
 
 function str(o: Obj, field: string): string {
-  if (typeof o[field] !== "string") fail(`${field} must be a string`);
-  return o[field] as string;
+  const v = o[field];
+  if (typeof v !== "string") fail(`${field} must be a string`);
+  return v;
 }
 
 function bool(o: Obj, field: string): boolean {
-  if (typeof o[field] !== "boolean") fail(`${field} must be a boolean`);
-  return o[field] as boolean;
+  const v = o[field];
+  if (typeof v !== "boolean") fail(`${field} must be a boolean`);
+  return v;
 }
 
 function parseKey(o: Obj): string {

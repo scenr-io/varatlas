@@ -32,13 +32,14 @@ export function Atlas({
   const hidden = stats.length - shown.length;
   const [active, setActive] = useState<GroupStat | null>(null);
 
-  if (shown.length === 0) {
+  const first = shown[0];
+  if (!first) {
     return <p className="py-6 text-sm text-fg-2">No variables are defined in this part of the tree.</p>;
   }
 
   const max = Math.max(...shown.map((s) => s.own + s.inSubgroups + s.inProjects));
   const minDepth = Math.min(...shown.map((s) => s.depth));
-  const readout = active ?? shown[0];
+  const readout = active ?? first;
 
   return (
     <div>

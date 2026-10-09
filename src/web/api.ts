@@ -16,10 +16,12 @@ async function call<T>(path: string, method = "GET", body?: unknown): Promise<T>
     headers: method === "GET" ? undefined : { "Content-Type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
-  const data = await res.json().catch(() => ({}));
+  const data: unknown = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error(data?.error || `Request failed (${res.status})`);
+    const error = typeof data === "object" && data !== null && "error" in data ? data.error : undefined;
+    throw new Error(typeof error === "string" && error ? error : `Request failed (${res.status})`);
   }
+  // Our own server's response; its shape is defined by the shared types.
   return data as T;
 }
 

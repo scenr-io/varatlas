@@ -3,7 +3,6 @@
 import { pooled } from "../pooled";
 import type {
   EntityRef,
-  EntityType,
   EntityVariables,
   GitLabVariable,
   OrgTree,
@@ -33,14 +32,14 @@ export function listVariables(token: string, target: EntityRef): Promise<GitLabV
 export function fetchAllVariables(token: string, tree: OrgTree): Promise<EntityVariables[]> {
   const targets: Omit<EntityVariables, "variables">[] = [
     ...tree.groups.map((g) => ({
-      entity: "group" as EntityType,
+      entity: "group" as const,
       id: g.id,
       path: g.full_path,
       name: g.name,
       web_url: g.web_url,
     })),
     ...tree.projects.map((p) => ({
-      entity: "project" as EntityType,
+      entity: "project" as const,
       id: p.id,
       path: p.path_with_namespace,
       name: p.name,

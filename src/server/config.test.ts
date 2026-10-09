@@ -21,3 +21,13 @@ describe("config", () => {
     expect(allowedHosts({ VARATLAS_ALLOWED_HOSTS: "vars.internal" })).toEqual(["vars.internal"]);
   });
 });
+
+describe("toStatus", () => {
+  it("repeats normal statuses and maps odd ones to 502", async () => {
+    const { toStatus } = await import("./http");
+    expect(toStatus(403)).toBe(403);
+    expect(toStatus(429)).toBe(429);
+    expect(toStatus(204)).toBe(502);
+    expect(toStatus(42)).toBe(502);
+  });
+});

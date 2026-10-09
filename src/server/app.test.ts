@@ -89,7 +89,7 @@ describe("/api/variables", () => {
     );
 
     expect(res.status).toBe(200);
-    expect(String(fetch.mock.calls[0][0])).toBe(
+    expect(String(fetch.mock.calls[0]?.[0])).toBe(
       "https://gitlab.com/api/v4/projects/7/variables/API_KEY?filter[environment_scope]=production",
     );
     expect(store.patch).toHaveBeenCalledWith(

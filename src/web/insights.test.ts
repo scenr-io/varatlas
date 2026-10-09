@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { OrgTree } from "@shared/types";
-import { entity as ent, variable as v } from "../../test/helpers";
+import { defined, entity as ent, variable as v } from "../../test/helpers";
 import {
   effectiveRows,
   findFindings,
@@ -86,7 +86,7 @@ describe("summarizeKeys", () => {
     const byKey = Object.fromEntries(summarizeKeys(rows).map((k) => [k.key, k]));
     expect(byKey.REGISTRY).toMatchObject({ locations: 2, values: "different" });
     expect(byKey.SENTRY_DSN).toMatchObject({ locations: 2, values: "same", secret: true });
-    expect(byKey.DEPLOY_KEY.scopes).toEqual(["production"]);
+    expect(byKey.DEPLOY_KEY?.scopes).toEqual(["production"]);
   });
 });
 
@@ -139,17 +139,17 @@ describe("findFindings", () => {
 
   it("finds unmasked and unprotected secrets", () => {
     // API_TOKEN is masked; SENTRY_DSN x2 and DEPLOY_KEY x2 are not.
-    expect(findings["unmasked-secrets"].count).toBe(4);
-    expect(findings["unprotected-secrets"].count).toBe(5);
+    expect(findings["unmasked-secrets"]?.count).toBe(4);
+    expect(findings["unprotected-secrets"]?.count).toBe(5);
   });
 
   it("separates drift from shareable copies, ignoring inherited overrides", () => {
-    expect(findings.drift.count).toBe(1); // DEPLOY_KEY[production] in two unrelated projects
-    expect(findings.copies.count).toBe(1); // SENTRY_DSN identical in acme/web and acme/platform/api
+    expect(findings.drift?.count).toBe(1); // DEPLOY_KEY[production] in two unrelated projects
+    expect(findings.copies?.count).toBe(1); // SENTRY_DSN identical in acme/web and acme/platform/api
   });
 
   it("finds overrides of inherited variables", () => {
-    expect(findings.overrides.count).toBe(2); // REGISTRY and DB_URL on the api project
+    expect(findings.overrides?.count).toBe(2); // REGISTRY and DB_URL on the api project
   });
 
   it("reports unreadable places with their paths", () => {
@@ -164,9 +164,9 @@ describe("statistics", () => {
   });
 
   it("totals each group's own, subgroup and project variables", () => {
-    const acme = groupStats(tree, rows).find((g) => g.path === "acme")!;
+    const acme = defined(groupStats(tree, rows).find((g) => g.path === "acme"));
     expect(acme).toMatchObject({ depth: 0, own: 2, inSubgroups: 2, inProjects: 5, projects: 2 });
-    const platform = groupStats(tree, rows).find((g) => g.path === "acme/platform")!;
+    const platform = defined(groupStats(tree, rows).find((g) => g.path === "acme/platform"));
     expect(platform).toMatchObject({ depth: 1, own: 1, inProjects: 4, projects: 1 });
   });
 });

@@ -73,3 +73,9 @@ export function apiRequest(
         : JSON.stringify(init.body);
   return new Request(`${ORIGIN}${path}`, { method, headers, body });
 }
+
+/** `value`, or a clear test failure when it's missing (instead of a non-null assertion). */
+export function defined<T>(value: T | null | undefined, what = "value"): T {
+  if (value === null || value === undefined) throw new Error(`Expected ${what} to be defined`);
+  return value;
+}
