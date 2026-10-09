@@ -1,6 +1,7 @@
 /* A panel that slides in from the right, with a header, a scrolling body and an optional footer. */
 
 import type { ComponentChildren } from "preact";
+import { useLayoutEffect, useRef, useState } from "preact/hooks";
 import { X } from "lucide-preact";
 import { useEscape } from "@/hooks/useEscape";
 import { iconButtonClass } from "./Button";
@@ -27,6 +28,19 @@ export function Drawer({
   children: ComponentChildren;
 }) {
   useEscape(onClose);
+  const panelRef = useRef<HTMLDivElement>(null);
+  // Read during the first render, before anything inside the drawer takes focus.
+  const [opener] = useState(() => document.activeElement);
+
+  // Move focus into the drawer (unless a field inside already took it), and give it back on close.
+  useLayoutEffect(() => {
+    const panel = panelRef.current;
+    if (panel && !panel.contains(document.activeElement)) panel.focus();
+    return () => {
+      if (opener instanceof HTMLElement && opener.isConnected) opener.focus();
+    };
+  }, [opener]);
+
   return (
     <div className={`fixed inset-0 flex justify-end ${layer === "top" ? "z-[55]" : "z-50"}`}>
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
@@ -34,7 +48,9 @@ export function Drawer({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className={`drawer-in relative flex h-full w-full flex-col border-l border-line bg-page shadow-2xl shadow-black/60 ${
+        ref={panelRef}
+        tabIndex={-1}
+        className={`drawer-in relative outline-none flex h-full w-full flex-col border-l border-line bg-page shadow-2xl shadow-black/60 ${
           wide ? "max-w-[560px]" : "max-w-[480px]"
         }`}
       >
