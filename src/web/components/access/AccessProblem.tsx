@@ -1,5 +1,6 @@
 import type { ComponentChildren } from "preact";
 import { Check, CircleHelp, ExternalLink, Minus, RefreshCw, X } from "lucide-preact";
+import { Button, buttonClass } from "@/components/ui/Button";
 import { ScenrCredit } from "@/components/ui/ScenrCredit";
 import { newTokenUrl } from "@/access";
 import type { AuthStatus } from "@shared/types";
@@ -149,35 +150,19 @@ export function AccessScreen({ children }: { children: ComponentChildren }) {
 
 export function CreateTokenLink({ baseUrl, scope = "api" }: { baseUrl: string; scope?: "api" | "read_api" }) {
   return (
-    <a
-      href={newTokenUrl(baseUrl, scope)}
-      target="_blank"
-      rel="noreferrer"
-      className="flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-ink transition-opacity hover:opacity-90"
-    >
+    <a href={newTokenUrl(baseUrl, scope)} target="_blank" rel="noreferrer" className={buttonClass("primary")}>
       Create a token in GitLab
       <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
     </a>
   );
 }
 
-export function SecondaryButton({ onClick, children }: { onClick: () => void; children: ComponentChildren }) {
-  return (
-    <button
-      onClick={onClick}
-      className="flex items-center gap-1.5 rounded-lg border border-line-strong px-4 py-2 text-sm font-medium text-fg transition-colors hover:bg-raised"
-    >
-      {children}
-    </button>
-  );
-}
-
 export function CheckAgain({ onClick }: { onClick: () => void }) {
   return (
-    <SecondaryButton onClick={onClick}>
+    <Button onClick={onClick}>
       <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
       Check again
-    </SecondaryButton>
+    </Button>
   );
 }
 

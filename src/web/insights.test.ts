@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { EntityVariables, GitLabVariable, OrgTree } from "@shared/types";
+import type { OrgTree } from "@shared/types";
+import { entity as ent, variable as v } from "../../test/helpers";
 import {
   effectiveRows,
   findFindings,
@@ -13,26 +14,6 @@ import {
 } from "./insights";
 import { toRows } from "./rows";
 import { looksSecret } from "./secrets";
-
-const v = (key: string, over: Partial<GitLabVariable> = {}): GitLabVariable => ({
-  key,
-  value: "v",
-  variable_type: "env_var",
-  protected: false,
-  masked: false,
-  raw: false,
-  environment_scope: "*",
-  description: null,
-  ...over,
-});
-
-const ent = (
-  entity: "group" | "project",
-  id: number,
-  path: string,
-  variables: GitLabVariable[],
-  error?: string,
-): EntityVariables => ({ entity, id, path, name: path.split("/").pop()!, web_url: "", variables, error });
 
 const tree: OrgTree = {
   groups: [

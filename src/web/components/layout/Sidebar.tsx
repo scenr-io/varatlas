@@ -1,6 +1,7 @@
 import type { ComponentChildren } from "preact";
 import { useMemo, useState } from "preact/hooks";
 import { Bug, ChevronRight, Code, FolderTree, LogOut, Package, RefreshCw } from "lucide-preact";
+import { iconButtonClass } from "@/components/ui/Button";
 import { ScenrCredit } from "@/components/ui/ScenrCredit";
 import { NEW_ISSUE_URL, REPO_URL } from "@/links";
 import { buildGroupTree, type GroupNode } from "@/tree";
@@ -210,7 +211,7 @@ export default function Sidebar({
             onClick={onLogout}
             title="Disconnect token"
             aria-label="Disconnect token"
-            className="ml-auto rounded-md p-1.5 text-fg-3 transition-colors hover:bg-surface hover:text-fg"
+            className={`ml-auto ${iconButtonClass()}`}
           >
             <LogOut className="h-4 w-4" />
           </button>

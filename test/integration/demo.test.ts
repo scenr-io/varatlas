@@ -1,17 +1,15 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { findFindings, summarizeKeys } from "../web/insights";
-import { toRows } from "../web/rows";
-import { createApp } from "./app";
-import { createDemo, demoOrg } from "./demo";
-import { createSnapshotStore } from "./snapshot";
+/*
+ * Integration: the demo org must exercise every finding the web app knows about,
+ * and the demo backend must behave like GitLab through the real HTTP app.
+ */
 
-const ORIGIN = "http://localhost:3131";
-const req = (path: string, method = "GET", body?: unknown) =>
-  new Request(`${ORIGIN}${path}`, {
-    method,
-    headers: { host: "localhost:3131", origin: ORIGIN, "content-type": "application/json" },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
+import { createApp } from "../../src/server/app";
+import { createDemo, demoOrg } from "../../src/server/demo";
+import { createSnapshotStore } from "../../src/server/snapshot";
+import { findFindings, summarizeKeys } from "../../src/web/insights";
+import { toRows } from "../../src/web/rows";
+import { apiRequest } from "../helpers";
 
 describe("demo org", () => {
   const { tree, entities } = demoOrg();
@@ -59,7 +57,7 @@ describe("demo backend", () => {
   }
 
   it("reports demo mode and a full-access token", async () => {
-    const res = await app().request(req("/api/auth"));
+    const res = await app().request(apiRequest("/api/auth"));
     expect(await res.json()).toMatchObject({ configured: true, demo: true, token: { scopes: ["api"] } });
   });
 
@@ -74,28 +72,28 @@ describe("demo backend", () => {
       raw: false,
       environment_scope: "*",
     };
-    expect((await a.request(req("/api/variables", "POST", { entity: "group", id: 1, draft }))).status).toBe(
-      200,
+    const created = await a.request(
+      apiRequest("/api/variables", { method: "POST", body: { entity: "group", id: 1, draft } }),
     );
+    expect(created.status).toBe(200);
+
     const updated = await a.request(
-      req("/api/variables", "PUT", {
-        entity: "group",
-        id: 1,
-        key: "NEW_VAR",
-        scope: "*",
-        changes: { value: "changed-value" },
+      apiRequest("/api/variables", {
+        method: "PUT",
+        body: { entity: "group", id: 1, key: "NEW_VAR", scope: "*", changes: { value: "changed-value" } },
       }),
     );
     expect((await updated.json()).variable.value).toBe("changed-value");
-    expect(
-      (
-        await a.request(
-          req("/api/variables", "DELETE", { entity: "group", id: 1, key: "NEW_VAR", scope: "*" }),
-        )
-      ).status,
-    ).toBe(200);
 
-    const fresh = await (await a.request(req("/api/variables?refresh=1"))).json();
+    const deleted = await a.request(
+      apiRequest("/api/variables", {
+        method: "DELETE",
+        body: { entity: "group", id: 1, key: "NEW_VAR", scope: "*" },
+      }),
+    );
+    expect(deleted.status).toBe(200);
+
+    const fresh = await (await a.request(apiRequest("/api/variables?refresh=1"))).json();
     const root = fresh.entities.find(
       (e: { id: number; entity: string }) => e.entity === "group" && e.id === 1,
     );
@@ -106,7 +104,10 @@ describe("demo backend", () => {
     const { entities } = demoOrg();
     const locked = entities.find((e) => e.error)!;
     const res = await app().request(
-      req("/api/variables", "DELETE", { entity: locked.entity, id: locked.id, key: "X", scope: "*" }),
+      apiRequest("/api/variables", {
+        method: "DELETE",
+        body: { entity: locked.entity, id: locked.id, key: "X", scope: "*" },
+      }),
     );
     expect(res.status).toBe(403);
   });

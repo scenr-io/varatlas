@@ -1,8 +1,8 @@
 import type { ComponentChildren } from "preact";
-import { Chip } from "@/components/ui/Badge";
+import { ConsistencyChip, consistencyLabel } from "@/components/ui/ConsistencyChip";
+import { pct, scopeLabel } from "@/format";
 import type { KeySummary, Posture } from "@/insights";
 
-const pct = (n: number, max: number) => `${max === 0 ? 0 : (n / max) * 100}%`;
 const MAX_BARS = 6;
 
 /** A thin bar on a baseline: 4px rounded data end, square at the start. */
@@ -101,9 +101,7 @@ export function ScopeBars({
             className="grid w-full grid-cols-[minmax(0,7.5rem)_minmax(0,1fr)_2rem] items-center gap-3 rounded-md px-1 py-1 text-left transition-colors hover:bg-raised/60"
             aria-label={`${s.count} variables in ${s.scope === "*" ? "all environments" : s.scope}. Show them.`}
           >
-            <span className="truncate font-mono text-xs text-fg-2">
-              {s.scope === "*" ? "* (all)" : s.scope}
-            </span>
+            <span className="truncate font-mono text-xs text-fg-2">{scopeLabel(s.scope)}</span>
             <Bar value={s.count} max={max} />
             <span className="text-right text-xs tabular-nums text-fg-2">{s.count}</span>
           </button>
@@ -117,12 +115,6 @@ export function ScopeBars({
     </ul>
   );
 }
-
-const VALUES = {
-  same: { tone: "neutral", label: "Same value" },
-  different: { tone: "warning", label: "Values differ" },
-  unreadable: { tone: "neutral", label: "Hidden values" },
-} as const;
 
 /** Keys defined in the most places, with whether their copies agree. */
 export function RepeatedKeys({ keys, onOpen }: { keys: KeySummary[]; onOpen: (key: string) => void }) {
@@ -138,14 +130,14 @@ export function RepeatedKeys({ keys, onOpen }: { keys: KeySummary[]; onOpen: (ke
           <button
             onClick={() => onOpen(k.key)}
             className="grid w-full grid-cols-[minmax(0,1fr)_4rem_auto] items-center gap-3 rounded-md px-1 py-1 text-left transition-colors hover:bg-raised/60"
-            aria-label={`${k.key}: defined in ${k.locations} places. ${VALUES[k.values].label}. Open details.`}
+            aria-label={`${k.key}: defined in ${k.locations} places. ${consistencyLabel(k.values)}. Open details.`}
           >
             <span className="truncate font-mono text-xs text-fg">{k.key}</span>
             <span className="flex items-center gap-2">
               <Bar value={k.locations} max={max} />
               <span className="text-xs tabular-nums text-fg-2">{k.locations}</span>
             </span>
-            <Chip tone={VALUES[k.values].tone}>{VALUES[k.values].label}</Chip>
+            <ConsistencyChip values={k.values} />
           </button>
         </li>
       ))}

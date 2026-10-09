@@ -2,13 +2,9 @@ import type { ComponentChildren } from "preact";
 import { ShieldAlert } from "lucide-preact";
 import { Chip } from "@/components/ui/Badge";
 import type { KeySummary } from "@/insights";
-import { Centered } from "./VariableTable";
-
-const VALUES = {
-  same: { tone: "neutral", label: "Same value" },
-  different: { tone: "warning", label: "Values differ" },
-  unreadable: { tone: "neutral", label: "Hidden values" },
-} as const;
+import { Centered } from "@/components/ui/Centered";
+import { ConsistencyChip } from "@/components/ui/ConsistencyChip";
+import { scopeLabel } from "@/format";
 
 /** One row per key: where it lives and whether its copies agree. Opens the key's detail. */
 export function KeyTable({
@@ -57,11 +53,11 @@ export function KeyTable({
                   </td>
                   <td className="px-4 text-sm tabular-nums text-fg-2">{k.locations}</td>
                   <td className="max-w-[220px] truncate px-4 font-mono text-xs text-fg-2">
-                    {k.scopes.map((s) => (s === "*" ? "* (all)" : s)).join(", ")}
+                    {k.scopes.map(scopeLabel).join(", ")}
                   </td>
                   <td className="px-4">
                     {k.locations > 1 || k.values === "unreadable" ? (
-                      <Chip tone={VALUES[k.values].tone}>{VALUES[k.values].label}</Chip>
+                      <ConsistencyChip values={k.values} />
                     ) : (
                       <span className="text-xs text-fg-3">One place</span>
                     )}

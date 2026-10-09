@@ -1,6 +1,10 @@
-import { useEffect } from "preact/hooks";
+/* Confirmation before deleting a variable. */
+
 import { Loader2 } from "lucide-preact";
+import { Button } from "@/components/ui/Button";
+import { scopePhrase } from "@/format";
 import { useAutoFocus } from "@/hooks/useAutoFocus";
+import { useEscape } from "@/hooks/useEscape";
 import type { Row } from "@/rows";
 
 export function DeleteDialog({
@@ -15,15 +19,7 @@ export function DeleteDialog({
   onConfirm: () => void;
 }) {
   const cancelRef = useAutoFocus<HTMLButtonElement>();
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onCancel();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onCancel]);
-
-  const scope =
-    row.v.environment_scope === "*" ? "all environments" : `the ${row.v.environment_scope} environment`;
+  useEscape(onCancel);
 
   return (
     <div className="fixed inset-0 z-[60] grid place-items-center p-6">
@@ -39,26 +35,19 @@ export function DeleteDialog({
           Delete <span className="font-mono">{row.v.key}</span>?
         </h2>
         <p id="delete-detail" className="mt-2 text-sm leading-relaxed text-fg-2">
-          It will be removed from <span className="font-mono text-fg">{row.path}</span> for {scope}.
+          It will be removed from <span className="font-mono text-fg">{row.path}</span> for{" "}
+          {scopePhrase(row.v.environment_scope)}.
           {row.entity === "group" ? " Every project below this group" : " Pipelines in this project"} lose it
           immediately. This can't be undone.
         </p>
         <div className="mt-6 flex justify-end gap-2">
-          <button
-            ref={cancelRef}
-            onClick={onCancel}
-            className="rounded-lg px-4 py-2 text-sm font-medium text-fg-2 hover:bg-raised hover:text-fg"
-          >
+          <Button ref={cancelRef} variant="ghost" onClick={onCancel}>
             Keep it
-          </button>
-          <button
-            onClick={onConfirm}
-            disabled={busy}
-            className="flex items-center gap-2 rounded-lg bg-fg px-4 py-2 text-sm font-semibold text-page hover:opacity-90 disabled:opacity-50"
-          >
+          </Button>
+          <Button variant="danger" onClick={onConfirm} disabled={busy}>
             {busy && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
             Delete variable
-          </button>
+          </Button>
         </div>
       </div>
     </div>

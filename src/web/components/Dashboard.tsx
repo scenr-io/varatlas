@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
 import { Loader2, Plus } from "lucide-preact";
 import { accessState } from "@/access";
+import { plural } from "@/format";
 import { AccessBanner } from "@/components/access/AccessBanner";
 import {
   AccessProblem,
@@ -9,18 +10,18 @@ import {
   checksFor,
   CreateTokenLink,
   EnvTokenFix,
-  SecondaryButton,
 } from "@/components/access/AccessProblem";
 import TokenGate from "@/components/auth/TokenGate";
 import Sidebar, { type Selection } from "@/components/layout/Sidebar";
 import { TopBar, type View } from "@/components/layout/TopBar";
 import { Overview } from "@/components/overview/Overview";
+import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { DeleteDialog } from "@/components/variables/DeleteDialog";
 import { FilterBar, type Mode } from "@/components/variables/FilterBar";
 import { KeyDetail } from "@/components/variables/KeyDetail";
 import { KeyTable } from "@/components/variables/KeyTable";
-import VariableDrawer, { type DrawerState } from "@/components/variables/VariableDrawer";
+import { VariableDrawer, type DrawerState } from "@/components/variables/VariableDrawer";
 import { VariableTable } from "@/components/variables/VariableTable";
 import { useOrgVariables } from "@/hooks/useOrgVariables";
 import {
@@ -44,8 +45,6 @@ import {
   type Row,
 } from "@/rows";
 import type { EntityRef, GitLabVariable, OrgTree, VariableChanges, VariableDraft } from "@shared/types";
-
-const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
 function lookup(tree: OrgTree, ref: EntityRef) {
   if (ref.entity === "group") {
@@ -400,9 +399,7 @@ export default function Dashboard() {
                 {fromEnv ? (
                   <CheckAgain onClick={() => void org.start()} />
                 ) : (
-                  <SecondaryButton onClick={() => void org.disconnect()}>
-                    Use a different token
-                  </SecondaryButton>
+                  <Button onClick={() => void org.disconnect()}>Use a different token</Button>
                 )}
               </>
             }
@@ -435,7 +432,7 @@ export default function Dashboard() {
   const readOnly = access.kind === "ok" && access.readOnly;
   const otherToken =
     auth.source === "cookie" ? (
-      <SecondaryButton onClick={() => void org.disconnect()}>Use a different token</SecondaryButton>
+      <Button onClick={() => void org.disconnect()}>Use a different token</Button>
     ) : null;
   const blocked =
     access.kind === "no-role" ? (
@@ -497,25 +494,19 @@ export default function Dashboard() {
   const empty = filtersActive ? (
     <>
       <p className="font-medium text-fg">No variables match these filters</p>
-      <button
-        onClick={clearFilters}
-        className="mt-4 rounded-lg border border-line-strong px-4 py-2 text-sm font-medium text-fg hover:bg-raised"
-      >
+      <Button className="mt-4" onClick={clearFilters}>
         Clear filters
-      </button>
+      </Button>
     </>
   ) : (
     <>
       <p className="font-medium text-fg">No variables here yet</p>
       <p className="mt-1 text-sm text-fg-2">Variables you add to this group or project show up here.</p>
       {!readOnly && (
-        <button
-          onClick={() => openCreate()}
-          className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-ink hover:opacity-90"
-        >
+        <Button variant="primary" className="mt-4" onClick={() => openCreate()}>
           <Plus className="h-4 w-4" aria-hidden="true" />
           Add variable
-        </button>
+        </Button>
       )}
     </>
   );

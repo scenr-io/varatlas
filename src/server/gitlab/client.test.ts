@@ -1,19 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { jsonResponse, stubFetch } from "../../../test/helpers";
 import { GitLabError, glJson, glPaginated, retryDelayMs } from "./client";
 
-function json(body: unknown, init: ResponseInit = {}) {
-  return new Response(JSON.stringify(body), {
-    status: 200,
-    headers: { "content-type": "application/json", ...(init.headers ?? {}) },
-    ...init,
-  });
-}
-
+/** Answer successive fetch calls with `responses`, in order. */
 function mockFetch(...responses: Response[]) {
-  const fn = vi.fn();
-  for (const r of responses) fn.mockResolvedValueOnce(r);
-  vi.stubGlobal("fetch", fn);
-  return fn;
+  const queue = [...responses];
+  return stubFetch(() => queue.shift() ?? new Response(null, { status: 500 }));
 }
 
 afterEach(() => {
@@ -23,8 +15,8 @@ afterEach(() => {
 describe("glPaginated", () => {
   it("follows x-next-page until it is empty", async () => {
     const fetch = mockFetch(
-      json([1, 2], { headers: { "x-next-page": "2" } }),
-      json([3], { headers: { "x-next-page": "" } }),
+      jsonResponse([1, 2], { headers: { "x-next-page": "2" } }),
+      jsonResponse([3], { headers: { "x-next-page": "" } }),
     );
     expect(await glPaginated<number>("t", "/groups?x=1")).toEqual([1, 2, 3]);
     expect(fetch).toHaveBeenCalledTimes(2);
@@ -33,13 +25,14 @@ describe("glPaginated", () => {
   });
 
   it("sends the token server-side", async () => {
-    const fetch = mockFetch(json([]));
+    const fetch = mockFetch(jsonResponse([]));
     await glPaginated("glpat-abc", "/groups");
-    expect(fetch.mock.calls[0][1].headers["PRIVATE-TOKEN"]).toBe("glpat-abc");
+    const headers = fetch.mock.calls[0]?.[1]?.headers as Record<string, string> | undefined;
+    expect(headers?.["PRIVATE-TOKEN"]).toBe("glpat-abc");
   });
 
   it("surfaces GitLab's error message", async () => {
-    mockFetch(json({ message: "403 Forbidden" }, { status: 403 }));
+    mockFetch(jsonResponse({ message: "403 Forbidden" }, { status: 403 }));
     const err = await glPaginated("t", "/groups/1/variables").catch((e) => e);
     expect(err).toBeInstanceOf(GitLabError);
     expect(err.status).toBe(403);
@@ -50,15 +43,15 @@ describe("glPaginated", () => {
 describe("glJson", () => {
   it("retries rate-limited requests", async () => {
     const fetch = mockFetch(
-      json({}, { status: 429, headers: { "retry-after": "0" } }),
-      json({ username: "ada" }),
+      jsonResponse({}, { status: 429, headers: { "retry-after": "0" } }),
+      jsonResponse({ username: "ada" }),
     );
     expect(await glJson("t", "/user")).toEqual({ username: "ada" });
     expect(fetch).toHaveBeenCalledTimes(2);
   });
 
   it("stringifies structured validation errors", async () => {
-    mockFetch(json({ message: { value: ["is invalid"] } }, { status: 400 }));
+    mockFetch(jsonResponse({ message: { value: ["is invalid"] } }, { status: 400 }));
     const err = (await glJson("t", "/projects/1/variables").catch((e) => e)) as GitLabError;
     expect(err.message).toBe('{"value":["is invalid"]}');
   });

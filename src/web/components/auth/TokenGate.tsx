@@ -1,5 +1,6 @@
 import { useState } from "preact/hooks";
 import { KeyRound, Loader2, ShieldCheck } from "lucide-preact";
+import { buttonClass } from "@/components/ui/Button";
 import { ScenrCredit } from "@/components/ui/ScenrCredit";
 import { useAutoFocus } from "@/hooks/useAutoFocus";
 import { api } from "@/api";
@@ -75,7 +76,7 @@ export default function TokenGate({
           <button
             type="submit"
             disabled={busy || !token.trim()}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-accent-ink transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+            className={buttonClass("primary", "mt-4 w-full py-2.5")}
           >
             {busy && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
             {busy ? "Checking token…" : "Connect to GitLab"}

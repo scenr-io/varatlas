@@ -12,12 +12,10 @@ import type {
   VariableChanges,
   VariableDraft,
 } from "@shared/types";
+import { isSameVariable } from "@shared/variables";
 
 /** A cached snapshot older than this is refreshed in the background on open. */
 const STALE_MS = 30_000;
-
-const sameVar = (key: string, scope: string) => (v: GitLabVariable) =>
-  v.key === key && v.environment_scope === scope;
 
 export function useOrgVariables() {
   const [auth, setAuth] = useState<AuthStatus | null>(null);
@@ -90,13 +88,13 @@ export function useOrgVariables() {
   async function updateVariable(target: EntityRef, original: GitLabVariable, changes: VariableChanges) {
     const { key, environment_scope: scope } = original;
     const { variable } = await api.update({ ...target, key, scope, changes });
-    patch(target, (vars) => vars.map((v) => (sameVar(key, scope)(v) ? variable : v)));
+    patch(target, (vars) => vars.map((v) => (isSameVariable(key, scope)(v) ? variable : v)));
   }
 
   async function deleteVariable(target: EntityRef, original: GitLabVariable) {
     const { key, environment_scope: scope } = original;
     await api.remove({ ...target, key, scope });
-    patch(target, (vars) => vars.filter((v) => !sameVar(key, scope)(v)));
+    patch(target, (vars) => vars.filter((v) => !isSameVariable(key, scope)(v)));
   }
 
   /** Forget the saved token. Never throws; a failed request shows up as `connectionError`. */

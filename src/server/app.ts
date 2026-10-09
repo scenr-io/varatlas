@@ -5,7 +5,8 @@ import { relative } from "node:path";
 import { Hono } from "hono";
 import { compress } from "hono/compress";
 import { secureHeaders } from "hono/secure-headers";
-import type { AuthProblem, AuthStatus, GitLabVariable } from "../shared/types";
+import type { AuthProblem, AuthStatus } from "../shared/types";
+import { isSameVariable } from "../shared/variables";
 import { clearTokenCookie, requireToken, resolveToken, setTokenCookie } from "./auth";
 import { gitlabBackend, type Backend } from "./backend";
 import { allowedHosts } from "./config";
@@ -15,9 +16,6 @@ import { HttpError } from "./http";
 import { checkApiRequest } from "./security";
 import type { SnapshotStore } from "./snapshot";
 import { parseCreateRequest, parseDeleteRequest, parseTokenRequest, parseUpdateRequest } from "./validation";
-
-const sameVar = (key: string, scope: string) => (v: GitLabVariable) =>
-  v.key === key && v.environment_scope === scope;
 
 /** How a failed /user call should be explained. */
 function classify(e: unknown, scopesKnown: boolean): AuthProblem {
@@ -202,7 +200,9 @@ export function createApp({
     const variable = await updateVariable(token, { entity, id }, key, scope, changes).catch((e) =>
       explainForbidden(e, "change"),
     );
-    store.patch(token, { entity, id }, (vars) => vars.map((v) => (sameVar(key, scope)(v) ? variable : v)));
+    store.patch(token, { entity, id }, (vars) =>
+      vars.map((v) => (isSameVariable(key, scope)(v) ? variable : v)),
+    );
     return c.json({ variable });
   });
 
@@ -210,7 +210,7 @@ export function createApp({
     const token = requireToken(c);
     const { entity, id, key, scope } = parseDeleteRequest(await readJson(c.req.raw));
     await deleteVariable(token, { entity, id }, key, scope).catch((e) => explainForbidden(e, "change"));
-    store.patch(token, { entity, id }, (vars) => vars.filter((v) => !sameVar(key, scope)(v)));
+    store.patch(token, { entity, id }, (vars) => vars.filter((v) => !isSameVariable(key, scope)(v)));
     return c.json({ ok: true });
   });
 

@@ -1,18 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { distinctScopes, filterRows, toRows, type Filters } from "./rows";
-import type { EntityVariables, GitLabVariable } from "@shared/types";
-
-const v = (key: string, over: Partial<GitLabVariable> = {}): GitLabVariable => ({
-  key,
-  value: "value",
-  variable_type: "env_var",
-  protected: false,
-  masked: false,
-  raw: false,
-  environment_scope: "*",
-  description: null,
-  ...over,
-});
+import type { EntityVariables } from "@shared/types";
+import { variable as v } from "../../test/helpers";
 
 const entities: EntityVariables[] = [
   {

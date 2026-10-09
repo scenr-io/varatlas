@@ -1,8 +1,6 @@
 import { useState } from "preact/hooks";
+import { pct, plural, px } from "@/format";
 import type { GroupStat } from "@/insights";
-
-const pct = (n: number, max: number) => `${max === 0 ? 0 : (n / max) * 100}%`;
-const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
 export interface AtlasLabels {
   first: string;
@@ -84,7 +82,7 @@ export function Atlas({
               >
                 <span
                   className={`truncate text-[13px] ${s.isProject ? "font-mono text-xs text-fg" : "text-fg-2"}`}
-                  style={{ paddingLeft: `${(s.depth - minDepth) * 12}px` }}
+                  style={{ paddingLeft: px((s.depth - minDepth) * 12) }}
                 >
                   {s.name}
                 </span>

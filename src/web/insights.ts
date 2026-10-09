@@ -47,7 +47,7 @@ function groupBy<T>(items: T[], keyOf: (item: T) => string): Map<string, T[]> {
 /* Per-key summaries                                                   */
 /* ------------------------------------------------------------------ */
 
-type Consistency = "same" | "different" | "unreadable";
+export type Consistency = "same" | "different" | "unreadable";
 
 export interface KeySummary {
   key: string;

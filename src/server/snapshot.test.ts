@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { variable } from "../../test/helpers";
 import type { OrgData } from "./gitlab/org";
 import { createSnapshotStore } from "./snapshot";
 
@@ -11,18 +12,7 @@ const data = (key = "A"): OrgData => ({
       path: "acme/api",
       name: "api",
       web_url: "",
-      variables: [
-        {
-          key,
-          value: "v",
-          variable_type: "env_var",
-          protected: false,
-          masked: false,
-          raw: false,
-          environment_scope: "*",
-          description: null,
-        },
-      ],
+      variables: [variable(key)],
     },
   ],
   source: "graphql",

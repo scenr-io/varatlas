@@ -11,9 +11,8 @@ import type {
   VariableChanges,
   VariableDraft,
 } from "../shared/types";
+import { KEY_PATTERN } from "../shared/variables";
 import { HttpError } from "./http";
-
-const KEY_PATTERN = /^[A-Za-z0-9_]{1,255}$/;
 
 type Obj = Record<string, unknown>;
 

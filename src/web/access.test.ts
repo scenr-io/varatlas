@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { AuthStatus, EntityVariables } from "@shared/types";
+import type { AuthStatus } from "@shared/types";
+import { entity } from "../../test/helpers";
 import { accessState, expiresInDays, newTokenUrl } from "./access";
 
 const auth = (scopes: string[] | null, expiresAt: string | null = null): AuthStatus => ({
@@ -9,15 +10,7 @@ const auth = (scopes: string[] | null, expiresAt: string | null = null): AuthSta
   token: { name: "t", scopes, expiresAt },
 });
 
-const ent = (path: string, error?: string): EntityVariables => ({
-  entity: "project",
-  id: path.length,
-  path,
-  name: path,
-  web_url: "",
-  variables: [],
-  error,
-});
+const ent = (path: string, error?: string) => entity("project", path.length, path, [], error);
 
 const NOW = Date.parse("2026-10-04T12:00:00Z");
 

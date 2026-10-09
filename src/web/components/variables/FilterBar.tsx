@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "preact/hooks";
 import { Eye, EyeOff, Search, X } from "lucide-preact";
+import { scopeLabel } from "@/format";
 import type { AttrFilter, LevelFilter } from "@/rows";
 
 export type Mode = "location" | "key";
@@ -168,7 +169,7 @@ export function FilterBar(p: Props) {
             <option value="all">All environments</option>
             {p.scopes.map((s) => (
               <option key={s} value={s}>
-                {s === "*" ? "* (all environments)" : s}
+                {scopeLabel(s)}
               </option>
             ))}
           </select>

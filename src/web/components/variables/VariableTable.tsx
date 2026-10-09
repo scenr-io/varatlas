@@ -4,14 +4,15 @@ import { CornerLeftUp, Pencil, Trash2, TriangleAlert } from "lucide-preact";
 import type { EffectiveRow } from "@/insights";
 import { rowId, type Row } from "@/rows";
 import { visibleRange } from "@/virtual";
+import { Button, iconButtonClass } from "@/components/ui/Button";
+import { Centered } from "@/components/ui/Centered";
+import { px, scopeLabel } from "@/format";
 import { Settings } from "./Settings";
 import { ValueCell } from "./ValueCell";
 
 /** Every row has exactly this height, so only the rows on screen need to be rendered. */
 const ROW_HEIGHT = 56;
 const HEADER_HEIGHT = 36;
-// Preact 11 does not append "px" to numeric style values.
-const px = (n: number) => `${n}px`;
 
 const COLUMNS = ["Key", "Value", "Settings", "Environment", "Defined in", ""];
 
@@ -27,14 +28,6 @@ interface Props {
   onDelete: (r: Row) => void;
   empty: ComponentChildren;
   readOnly?: boolean;
-}
-
-export function Centered({ children }: { children: ComponentChildren }) {
-  return (
-    <div className="grid h-full min-h-60 place-items-center p-10">
-      <div className="max-w-sm text-center">{children}</div>
-    </div>
-  );
 }
 
 function DefinedIn({ r }: { r: EffectiveRow }) {
@@ -119,7 +112,7 @@ function VariableRow({
         <Settings v={r.v} />
       </td>
       <td className="whitespace-nowrap px-4 font-mono text-xs text-fg-2">
-        {r.v.environment_scope === "*" ? "* (all)" : r.v.environment_scope}
+        {scopeLabel(r.v.environment_scope)}
       </td>
       <td className="max-w-[260px] px-4">
         <DefinedIn r={r} />
@@ -131,7 +124,7 @@ function VariableRow({
               onClick={() => onEdit(r)}
               title={r.inheritedFrom ? `Edit in ${r.inheritedFrom}` : "Edit"}
               aria-label={`Edit ${r.v.key} in ${r.path}`}
-              className="rounded-md p-2 text-fg-3 transition-colors hover:bg-raised hover:text-fg"
+              className={iconButtonClass()}
             >
               <Pencil className="h-3.5 w-3.5" />
             </button>
@@ -139,7 +132,7 @@ function VariableRow({
               onClick={() => onDelete(r)}
               title={r.inheritedFrom ? `Delete from ${r.inheritedFrom}` : "Delete"}
               aria-label={`Delete ${r.v.key} from ${r.path}`}
-              className="rounded-md p-2 text-fg-3 transition-colors hover:bg-critical/15 hover:text-critical"
+              className={iconButtonClass("danger")}
             >
               <Trash2 className="h-3.5 w-3.5" />
             </button>
@@ -178,12 +171,9 @@ export function VariableTable(p: Props) {
         <TriangleAlert className="mx-auto h-6 w-6 text-warning" aria-hidden="true" />
         <p className="mt-3 font-medium text-fg">Couldn't load variables</p>
         <p className="mt-1 text-sm text-fg-2">{p.loadError}</p>
-        <button
-          onClick={p.onRetry}
-          className="mt-4 rounded-lg border border-line-strong px-4 py-2 text-sm font-medium text-fg hover:bg-raised"
-        >
+        <Button className="mt-4" onClick={p.onRetry}>
           Try again
-        </button>
+        </Button>
       </Centered>
     );
   } else if (p.rows.length === 0) {

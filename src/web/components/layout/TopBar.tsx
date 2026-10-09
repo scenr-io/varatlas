@@ -1,4 +1,5 @@
 import { Menu, Plus } from "lucide-preact";
+import { buttonClass } from "@/components/ui/Button";
 import { SyncStatus } from "./SyncStatus";
 
 export type View = "overview" | "variables";
@@ -58,11 +59,7 @@ export function TopBar(p: Props) {
       <div className="ml-auto flex items-center gap-4">
         <SyncStatus syncedAt={p.syncedAt} refreshing={p.refreshing} error={p.refreshError} />
         {!p.readOnly && (
-          <button
-            onClick={p.onAdd}
-            disabled={!p.canAdd}
-            className="flex items-center gap-1.5 rounded-lg bg-accent px-3.5 py-2 text-sm font-semibold text-accent-ink transition-opacity hover:opacity-90 disabled:opacity-40"
-          >
+          <button onClick={p.onAdd} disabled={!p.canAdd} className={buttonClass("primary", "px-3.5")}>
             <Plus className="h-4 w-4" aria-hidden="true" />
             <span className="hidden sm:inline">Add variable</span>
           </button>
