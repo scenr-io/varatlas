@@ -183,13 +183,14 @@ decisions) see [docs/architecture.md](docs/architecture.md).
 
 ```bash
 pnpm dev          # UI with hot reload + API server → http://localhost:3131
-pnpm check        # lint + typecheck + tests
+pnpm check        # format, lint, types, tests with coverage, dead code
 pnpm test:watch   # tests in watch mode
+pnpm test:e2e     # browser tests against the built app in demo mode (after pnpm build)
 pnpm bench        # time the analysis on a synthetic 20,000-variable org
 pnpm build        # production build → dist/
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/conventions.md](docs/conventions.md).
 
 ## License
 

@@ -1,0 +1,55 @@
+name: Bug report
+description: Something in varatlas doesn't work as it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Please don't paste tokens or variable values. For security problems, use [private vulnerability reporting](https://github.com/scenr-io/varatlas/security/advisories/new) instead.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What did you see, and what did you expect to see?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Can you reproduce it in demo mode (`VARATLAS_DEMO=1`)? That makes it much easier to fix.
+      placeholder: |
+        1. Open the Variables view
+        2. Filter by ...
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: varatlas version
+      description: The image tag (e.g. `ghcr.io/scenr-io/varatlas:0.1.1`) or the commit you built from.
+    validations:
+      required: true
+  - type: dropdown
+    id: run
+    attributes:
+      label: How do you run it?
+      options:
+        - Docker image
+        - From source (pnpm build && pnpm start)
+        - Development (pnpm dev)
+    validations:
+      required: true
+  - type: input
+    id: gitlab
+    attributes:
+      label: GitLab
+      description: gitlab.com, or your self-managed GitLab version.
+      placeholder: gitlab.com
+  - type: textarea
+    id: logs
+    attributes:
+      label: Server log or browser console output
+      description: Remove anything sensitive first.
+      render: text

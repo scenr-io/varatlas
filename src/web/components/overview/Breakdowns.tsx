@@ -1,3 +1,5 @@
+/* The overview's smaller charts: protections, environment scopes and repeated keys. */
+
 import type { ComponentChildren } from "preact";
 import { ConsistencyChip, consistencyLabel } from "@/components/ui/ConsistencyChip";
 import { pct, scopeLabel } from "@/format";

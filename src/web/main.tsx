@@ -1,3 +1,5 @@
+/* Browser entry point: fonts, styles, and the app mounted into #app. */
+
 import "@fontsource/instrument-serif/latin-400.css";
 import "./styles.css";
 import { render } from "preact";

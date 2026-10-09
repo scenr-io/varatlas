@@ -1,3 +1,5 @@
+/* Left rail: the group and project tree to scope the views, plus account and project links. */
+
 import type { ComponentChildren } from "preact";
 import { useMemo, useState } from "preact/hooks";
 import { Bug, ChevronRight, Code, FolderTree, LogOut, Package, RefreshCw } from "lucide-preact";

@@ -1,3 +1,5 @@
+/* Search and filters above the variables table, plus the by-location / by-key switch. */
+
 import { useEffect, useRef } from "preact/hooks";
 import { Eye, EyeOff, Search, X } from "lucide-preact";
 import { scopeLabel } from "@/format";

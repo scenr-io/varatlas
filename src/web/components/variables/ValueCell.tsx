@@ -1,3 +1,5 @@
+/* A variable's value in the table: hidden until revealed, and copyable. */
+
 import { useState } from "preact/hooks";
 import { Check, Copy, Eye, EyeOff } from "lucide-preact";
 import { useToast } from "@/components/ui/Toast";

@@ -1,3 +1,5 @@
+/* The shared layout for every "this token can't be used" message: a token check, fixes and actions. */
+
 import type { ComponentChildren } from "preact";
 import { Check, CircleHelp, ExternalLink, Minus, RefreshCw, X } from "lucide-preact";
 import { Button, buttonClass } from "@/components/ui/Button";

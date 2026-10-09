@@ -1,6 +1,6 @@
 {
   "name": "varatlas",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Find, audit and manage every GitLab CI/CD variable across your whole org.",
   "license": "MIT",
@@ -17,17 +17,17 @@
     "dev": "node scripts/dev.mjs",
     "build": "vite build && node scripts/build.mjs",
     "start": "node dist/server/index.mjs",
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test:coverage && pnpm deadcode",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test:coverage && pnpm deadcode",
-    "deadcode": "knip",
-    "bench": "tsx scripts/bench.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
-    "test:coverage": "vitest run --coverage"
+    "deadcode": "knip",
+    "bench": "tsx scripts/bench.ts"
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",

@@ -1,3 +1,5 @@
+/* Focus on mount, for dialogs and drawers. */
+
 import { useLayoutEffect, useRef } from "preact/hooks";
 
 /** Focus an element when it mounts. The `autofocus` attribute is ignored for elements added after page load. */

@@ -1,3 +1,5 @@
+/* The org atlas chart on the overview: where variables are defined across the hierarchy. */
+
 import { useState } from "preact/hooks";
 import { pct, plural, px } from "@/format";
 import type { GroupStat } from "@/insights";

@@ -1,3 +1,5 @@
+/* Header: view switcher, sync status and the add-variable button. */
+
 import { Menu, Plus } from "lucide-preact";
 import { buttonClass } from "@/components/ui/Button";
 import { SyncStatus } from "./SyncStatus";

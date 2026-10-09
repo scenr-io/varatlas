@@ -1,3 +1,5 @@
+/* The variables view by location: a virtualized table with edit and delete per row. */
+
 import type { ComponentChildren } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { CornerLeftUp, Pencil, Trash2, TriangleAlert } from "lucide-preact";

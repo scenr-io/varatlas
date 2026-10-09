@@ -1,3 +1,5 @@
+/* The "Synced 3 min ago" line in the top bar. */
+
 import { useEffect, useState } from "preact/hooks";
 
 function ago(ms: number): string {

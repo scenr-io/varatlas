@@ -1,3 +1,5 @@
+/* Short-lived confirmations and errors after an action, from anywhere via useToast(). */
+
 import { createContext, type ComponentChildren } from "preact";
 import { useCallback, useContext, useState } from "preact/hooks";
 import { CircleCheck, CircleX } from "lucide-preact";

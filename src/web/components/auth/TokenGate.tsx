@@ -1,3 +1,5 @@
+/* The connect screen, shown until the server has a usable token. */
+
 import { useState } from "preact/hooks";
 import { KeyRound, Loader2, ShieldCheck } from "lucide-preact";
 import { buttonClass } from "@/components/ui/Button";
@@ -30,7 +32,7 @@ export function TokenGate({
       await api.connect(token);
       onConnected();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not validate the token");
+      setError(err instanceof Error ? err.message : "Couldn't check the token");
     } finally {
       setBusy(false);
     }

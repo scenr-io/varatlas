@@ -1,3 +1,5 @@
+/* The variables view grouped by key. */
+
 import type { ComponentChildren } from "preact";
 import { ShieldAlert } from "lucide-preact";
 import { Chip } from "@/components/ui/Badge";

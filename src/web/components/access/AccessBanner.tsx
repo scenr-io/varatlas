@@ -1,3 +1,5 @@
+/* Notes shown above the workspace when the token works but has limits. */
+
 import { Clock, Eye, FlaskConical } from "lucide-preact";
 import { newTokenUrl } from "@/access";
 

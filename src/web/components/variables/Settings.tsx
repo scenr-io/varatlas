@@ -1,3 +1,5 @@
+/* A variable's settings (protected, masked, raw, file), as chips. */
+
 import { FileText, Lock, ShieldAlert } from "lucide-preact";
 import { Chip } from "@/components/ui/Badge";
 import { looksSecret } from "@/secrets";

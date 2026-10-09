@@ -1,3 +1,5 @@
+/* The add and edit form for one variable, in a drawer. */
+
 import type { ComponentChildren } from "preact";
 import { useMemo, useState } from "preact/hooks";
 import { Loader2 } from "lucide-preact";

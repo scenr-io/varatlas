@@ -1,3 +1,5 @@
+/* The overview's list of findings, each one a shortcut to the variables behind it. */
+
 import { ChevronRight, CircleCheck } from "lucide-preact";
 import { SeverityIcon } from "@/components/ui/Badge";
 import { findingUnit, type Finding } from "@/insights";

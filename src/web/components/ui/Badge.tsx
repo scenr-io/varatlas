@@ -1,3 +1,5 @@
+/* Chips and severity icons. Severity is carried by icon shape and weight, never by color alone. */
+
 import type { ComponentChildren } from "preact";
 import { Info, OctagonAlert, TriangleAlert } from "lucide-preact";
 import type { Severity } from "@/insights";
