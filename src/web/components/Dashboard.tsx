@@ -325,6 +325,20 @@ export default function Dashboard() {
 
   /* ---------------- render ---------------- */
 
+  if (auth === null && org.connectionError) {
+    return (
+      <AccessScreen>
+        <AccessProblem title="Can't reach varatlas" actions={<CheckAgain onClick={() => void org.start()} />}>
+          <p>
+            This page loaded, but the varatlas server isn't answering. It may be restarting, or the container
+            or proxy in front of it may be down.
+          </p>
+          <p>Check that varatlas is running, then try again.</p>
+        </AccessProblem>
+      </AccessScreen>
+    );
+  }
+
   if (auth === null) {
     return (
       <div className="grid min-h-screen place-items-center bg-page">
@@ -340,7 +354,10 @@ export default function Dashboard() {
     if (auth.problem === "unreachable") {
       return (
         <AccessScreen>
-          <AccessProblem title={`Can't reach GitLab at ${host}`} actions={<CheckAgain onClick={org.start} />}>
+          <AccessProblem
+            title={`Can't reach GitLab at ${host}`}
+            actions={<CheckAgain onClick={() => void org.start()} />}
+          >
             <p>
               varatlas couldn't connect to GitLab, so it can't check your token yet. Make sure{" "}
               <span className="font-mono text-fg">GITLAB_BASE_URL</span> points at your GitLab, and that this
@@ -360,7 +377,7 @@ export default function Dashboard() {
             actions={
               <>
                 <CreateTokenLink baseUrl={auth.baseUrl} />
-                <CheckAgain onClick={org.start} />
+                <CheckAgain onClick={() => void org.start()} />
               </>
             }
           >
@@ -381,9 +398,11 @@ export default function Dashboard() {
               <>
                 <CreateTokenLink baseUrl={auth.baseUrl} />
                 {fromEnv ? (
-                  <CheckAgain onClick={org.start} />
+                  <CheckAgain onClick={() => void org.start()} />
                 ) : (
-                  <SecondaryButton onClick={org.disconnect}>Use a different token</SecondaryButton>
+                  <SecondaryButton onClick={() => void org.disconnect()}>
+                    Use a different token
+                  </SecondaryButton>
                 )}
               </>
             }
@@ -402,7 +421,7 @@ export default function Dashboard() {
     return (
       <TokenGate
         baseUrl={auth.baseUrl}
-        onConnected={org.start}
+        onConnected={() => void org.start()}
         notice={
           auth.problem === "invalid"
             ? "GitLab refused your saved token, so it was removed. It may have expired or been revoked. Paste a new one to continue."
@@ -416,7 +435,7 @@ export default function Dashboard() {
   const readOnly = access.kind === "ok" && access.readOnly;
   const otherToken =
     auth.source === "cookie" ? (
-      <SecondaryButton onClick={org.disconnect}>Use a different token</SecondaryButton>
+      <SecondaryButton onClick={() => void org.disconnect()}>Use a different token</SecondaryButton>
     ) : null;
   const blocked =
     access.kind === "no-role" ? (
@@ -426,7 +445,7 @@ export default function Dashboard() {
         paths={access.paths}
         actions={
           <>
-            <CheckAgain onClick={org.refresh} />
+            <CheckAgain onClick={() => void org.refresh()} />
             {otherToken}
           </>
         }
@@ -444,7 +463,7 @@ export default function Dashboard() {
         checks={checksFor(auth, "groups")}
         actions={
           <>
-            <CheckAgain onClick={org.refresh} />
+            <CheckAgain onClick={() => void org.refresh()} />
             {otherToken}
           </>
         }
@@ -467,11 +486,11 @@ export default function Dashboard() {
       varCounts={varCounts}
       selection={selection}
       onSelect={onPick}
-      onRefresh={org.refresh}
+      onRefresh={() => void org.refresh()}
       refreshing={org.refreshing}
       user={auth.user ?? null}
       canLogout={auth.source === "cookie"}
-      onLogout={org.disconnect}
+      onLogout={() => void org.disconnect()}
     />
   );
 
@@ -563,7 +582,7 @@ export default function Dashboard() {
                 rows={[]}
                 loading={loading}
                 loadError={blockingError}
-                onRetry={org.start}
+                onRetry={() => void org.start()}
                 keyLocations={keyLocations}
                 revealAll={false}
                 onOpenKey={setOpenKey}
@@ -606,7 +625,7 @@ export default function Dashboard() {
                 rows={filtered}
                 loading={loading}
                 loadError={blockingError}
-                onRetry={org.start}
+                onRetry={() => void org.start()}
                 keyLocations={keyLocations}
                 revealAll={revealAll}
                 onOpenKey={setOpenKey}

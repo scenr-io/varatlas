@@ -25,12 +25,21 @@ export function useOrgVariables() {
   const [entities, setEntities] = useState<EntityVariables[] | null>(null);
   const [syncedAt, setSyncedAt] = useState<number | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  /** set when the browser can't reach the varatlas server at all */
+  const [connectionError, setConnectionError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
+  /** Ask the server who we are. Never throws: a failed request becomes `connectionError`. */
   const checkAuth = useCallback(async () => {
-    const status = await api.authStatus();
-    setAuth(status);
-    return status.configured;
+    try {
+      const status = await api.authStatus();
+      setAuth(status);
+      setConnectionError(null);
+      return status.configured;
+    } catch (e) {
+      setConnectionError(e instanceof Error ? e.message : "The varatlas server didn't respond");
+      return false;
+    }
   }, []);
 
   const load = useCallback(async (refresh: boolean): Promise<OrgVariables | null> => {
@@ -90,8 +99,13 @@ export function useOrgVariables() {
     patch(target, (vars) => vars.filter((v) => !sameVar(key, scope)(v)));
   }
 
+  /** Forget the saved token. Never throws; a failed request shows up as `connectionError`. */
   async function disconnect() {
-    await api.disconnect();
+    try {
+      await api.disconnect();
+    } catch {
+      /* checkAuth below reports the connection problem */
+    }
     setAuth(null);
     setTree(null);
     setEntities(null);
@@ -105,6 +119,7 @@ export function useOrgVariables() {
     entities,
     syncedAt,
     loadError,
+    connectionError,
     refreshing,
     start,
     refresh,
