@@ -54,9 +54,9 @@
   },
   "dependencies": {
     "@fontsource/instrument-serif": "^5.3.0",
-    "@hono/node-server": "^2.1.4",
-    "hono": "^4.13.13",
-    "lucide-preact": "^1.55.0",
-    "preact": "^11.0.1"
+    "@hono/node-server": "^2.1.5",
+    "hono": "^4.13.14",
+    "lucide-preact": "^1.61.0",
+    "preact": "^11.0.2"
   }
 }
