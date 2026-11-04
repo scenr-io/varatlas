@@ -5,6 +5,9 @@ import type { GitLabVariable } from "./types";
 /** GitLab's rule for variable keys: letters, digits and underscores, 1 to 255 characters. */
 export const KEY_PATTERN = /^[A-Za-z0-9_]{1,255}$/;
 
+/** The most updates one batch request may carry; the browser splits larger fixes. */
+export const MAX_BATCH_UPDATES = 500;
+
 /** A variable is identified by its key and environment scope within one group or project. */
 export const isSameVariable =
   (key: string, scope: string) =>

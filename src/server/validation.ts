@@ -4,6 +4,7 @@
  */
 
 import type {
+  BatchUpdateRequest,
   CreateVariableRequest,
   DeleteVariableRequest,
   EntityRef,
@@ -11,7 +12,7 @@ import type {
   VariableChanges,
   VariableDraft,
 } from "../shared/types";
-import { KEY_PATTERN } from "../shared/variables";
+import { KEY_PATTERN, MAX_BATCH_UPDATES } from "../shared/variables";
 import { HttpError } from "./http";
 
 type Obj = Record<string, unknown>;
@@ -117,6 +118,15 @@ export function parseUpdateRequest(body: unknown): UpdateVariableRequest {
     scope: parseScope(o, "scope"),
     changes: parseChanges(o.changes),
   };
+}
+
+export function parseBatchUpdateRequest(body: unknown): BatchUpdateRequest {
+  const o = asObject(body, "body");
+  const { updates } = o;
+  if (!Array.isArray(updates)) fail("updates must be a list");
+  if (updates.length === 0) fail("updates must not be empty");
+  if (updates.length > MAX_BATCH_UPDATES) fail(`updates can hold at most ${MAX_BATCH_UPDATES} changes`);
+  return { updates: updates.map((u: unknown) => parseUpdateRequest(u)) };
 }
 
 export function parseDeleteRequest(body: unknown): DeleteVariableRequest {

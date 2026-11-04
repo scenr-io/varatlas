@@ -120,6 +120,19 @@ export interface UpdateVariableRequest extends EntityRef {
   changes: VariableChanges;
 }
 
+/** Several updates in one request, e.g. masking every secret behind a finding. */
+export interface BatchUpdateRequest {
+  updates: UpdateVariableRequest[];
+}
+
+/** The outcome of one update in a batch: the saved variable, or why GitLab refused it. */
+export type BatchUpdateResult = { ok: true; variable: GitLabVariable } | { ok: false; error: string };
+
+export interface BatchUpdateResponse {
+  /** one result per update, in request order */
+  results: BatchUpdateResult[];
+}
+
 export interface DeleteVariableRequest extends EntityRef {
   key: string;
   scope: string;
