@@ -2,6 +2,8 @@
 
 import { ChevronRight, CircleCheck } from "lucide-preact";
 import { SeverityIcon } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { FIX_WORDS, fixFor } from "@/fixes";
 import { findingUnit, type Finding } from "@/insights";
 
 const SHOWN_PATHS = 3;
@@ -15,8 +17,19 @@ function Paths({ paths }: { paths: string[] }) {
   );
 }
 
-/** The audit: what needs fixing, most serious first. Every finding opens its variables. */
-export function Findings({ findings, onOpen }: { findings: Finding[]; onOpen: (f: Finding) => void }) {
+/**
+ * The audit: what needs fixing, most serious first. Every finding opens its variables,
+ * and findings with a bulk fix offer it when `onFix` is set (not for read-only tokens).
+ */
+export function Findings({
+  findings,
+  onOpen,
+  onFix,
+}: {
+  findings: Finding[];
+  onOpen: (f: Finding) => void;
+  onFix?: (f: Finding) => void;
+}) {
   if (findings.length === 0) {
     return (
       <div className="flex items-start gap-3 py-4">
@@ -48,12 +61,15 @@ export function Findings({ findings, onOpen }: { findings: Finding[]; onOpen: (f
             </div>
           </>
         );
+        const fix = onFix && f.rowIds.size > 0 ? fixFor(f) : null;
         return (
           <li key={f.id}>
             {f.rowIds.size > 0 ? (
               <button
                 onClick={() => onOpen(f)}
-                className="group flex w-full items-start gap-3 py-4 text-left transition-colors hover:bg-surface/60"
+                className={`group flex w-full items-start gap-3 text-left transition-colors hover:bg-surface/60 ${
+                  fix ? "pb-2 pt-4" : "py-4"
+                }`}
                 aria-label={`${f.title}: ${f.count} ${findingUnit(f)}. Show them.`}
               >
                 {body}
@@ -64,6 +80,11 @@ export function Findings({ findings, onOpen }: { findings: Finding[]; onOpen: (f
               </button>
             ) : (
               <div className="flex items-start gap-3 py-4 pr-7">{body}</div>
+            )}
+            {fix && onFix && (
+              <div className="pb-4 pl-7">
+                <Button onClick={() => onFix(f)}>{FIX_WORDS[fix].all}</Button>
+              </div>
             )}
           </li>
         );

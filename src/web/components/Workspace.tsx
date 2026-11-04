@@ -6,6 +6,7 @@ import { AccessBanner } from "@/components/access/AccessBanner";
 import { NoGroups, RoleMissing } from "@/components/access/screens";
 import { Sidebar, type Selection } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
+import { BulkFixDrawer } from "@/components/overview/BulkFixDrawer";
 import { Overview } from "@/components/overview/Overview";
 import { Button } from "@/components/ui/Button";
 import { DeleteDialog } from "@/components/variables/DeleteDialog";
@@ -19,7 +20,8 @@ import { useDashboardState } from "@/hooks/useDashboardState";
 import type { OrgVariablesApi } from "@/hooks/useOrgVariables";
 import { useOrgView } from "@/hooks/useOrgView";
 import { useVariableEditing } from "@/hooks/useVariableEditing";
-import { distinctScopes } from "@/rows";
+import type { Finding } from "@/insights";
+import { distinctScopes, rowId } from "@/rows";
 import type { AuthStatus } from "@shared/types";
 
 export function Workspace({ org, auth }: { org: OrgVariablesApi; auth: AuthStatus }) {
@@ -36,6 +38,11 @@ export function Workspace({ org, auth }: { org: OrgVariablesApi; auth: AuthStatu
 
   const loading = entities === null && !org.loadError;
   const blockingError = entities === null ? org.loadError : null;
+  const openFix = (f: Finding) =>
+    edit.openFix(
+      f,
+      view.rows.filter((r) => f.rowIds.has(rowId(r))),
+    );
   const keySummary = ui.openKey ? view.allKeys.find((k) => k.key === ui.openKey) : undefined;
 
   const blocked =
@@ -144,6 +151,7 @@ export function Workspace({ org, auth }: { org: OrgVariablesApi; auth: AuthStatu
                 {...view.overview}
                 findings={view.findings}
                 onFinding={ui.openFinding}
+                onFix={readOnly ? undefined : openFix}
                 onGroup={(id) => ui.setSelection({ entity: "group", id })}
                 onScope={ui.openScope}
                 onKey={ui.setOpenKey}
@@ -208,6 +216,19 @@ export function Workspace({ org, auth }: { org: OrgVariablesApi; auth: AuthStatu
           busy={edit.drawerBusy}
           onClose={edit.closeDrawer}
           onSubmit={(target, draft) => void edit.submit(target, draft)}
+        />
+      )}
+
+      {edit.fixing && (
+        <BulkFixDrawer
+          key={edit.fixing.attempt}
+          kind={edit.fixing.kind}
+          findingTitle={edit.fixing.findingTitle}
+          items={edit.fixing.items}
+          errors={edit.fixing.errors}
+          busy={edit.fixBusy}
+          onClose={edit.closeFix}
+          onApply={(rows) => void edit.applyFix(rows)}
         />
       )}
 

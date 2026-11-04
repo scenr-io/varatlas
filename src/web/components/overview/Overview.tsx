@@ -9,6 +9,8 @@ import { Findings } from "./Findings";
 interface Props extends OverviewModel {
   findings: Finding[];
   onFinding: (f: Finding) => void;
+  /** offer bulk fixes on findings; left out for read-only tokens */
+  onFix?: (f: Finding) => void;
   onGroup: (groupId: number) => void;
   onScope: (scope: string) => void;
   onKey: (key: string) => void;
@@ -27,7 +29,7 @@ export function Overview(p: Props) {
           </h2>
           <p className="mt-0.5 text-xs text-fg-3">Select a finding to see the variables behind it.</p>
           <div className="mt-2">
-            <Findings findings={p.findings} onOpen={p.onFinding} />
+            <Findings findings={p.findings} onOpen={p.onFinding} onFix={p.onFix} />
           </div>
         </section>
 
