@@ -133,6 +133,7 @@ on localhost only. See the README's security model.
 | `DELETE /api/auth`                       | Forget the session token                                                     |
 | `GET /api/variables`                     | The cached snapshot; `?refresh=1` reloads from GitLab                        |
 | `POST` / `PUT` / `DELETE /api/variables` | Create, update or delete one variable                                        |
+| `PATCH /api/variables`                   | Update up to 500 variables, a few at a time, with a result for each one      |
 | `GET /healthz`                           | Liveness check for containers                                                |
 
 Request bodies are parsed by `validation.ts`, which drops unknown fields, so a request
@@ -343,6 +344,9 @@ with the number of variables rather than with its square.
 
 ## Making changes
 
+- **Offer a bulk fix for a finding:** map its id to a fix in `web/fixes.ts`, and if GitLab can
+  refuse the change for some values, say why in `planFix`. The finding gets a button and the
+  review panel (`BulkFixDrawer`) automatically; changes go through `PATCH /api/variables`.
 - **Add a finding:** add it to `findFindings` in `web/insights.ts` with a test, and say
   what it counts (`counts` and `unit`). The overview and the finding filter pick it up
   automatically.

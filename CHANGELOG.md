@@ -4,6 +4,16 @@ All notable changes to varatlas are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- "Mask all" and "Protect all" on the two secrets findings. A review panel lists every variable
+  behind the finding, all selected by default, flags values GitLab won't mask, warns that
+  protecting cuts off unprotected branches and merge requests, and keeps anything GitLab refuses
+  in the list with its reason.
+- `PATCH /api/variables` updates up to 500 variables in one request, with a result for each.
+
 ## [0.1.1] - 2026-10-09
 
 ### Fixed

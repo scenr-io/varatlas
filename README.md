@@ -51,6 +51,11 @@ defined, whether the copies agree, and how many projects each one reaches.
 
 ![Every place DATABASE_URL is defined, side by side](docs/images/key-detail.png)
 
+**Fix findings in bulk.** "Mask all" and "Protect all" on the secrets findings open a review
+panel with every variable behind the finding selected. Untick what should stay as it is; values
+GitLab won't mask are flagged before anything is sent, and anything GitLab refuses stays listed
+with its reason.
+
 **Clear answers when a token can't do something.** varatlas checks the token's scopes,
 expiry and role, and explains what's missing and how to fix it, instead of showing an
 empty page. Read-only tokens get a read-only view.
