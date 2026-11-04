@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { act, renderHook, waitFor } from "@testing-library/preact";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { OrgVariables } from "@shared/types";
+import type { BatchUpdateResult, OrgVariables } from "@shared/types";
 import { authStatus, entity, variable } from "../../../test/helpers";
 import { api } from "@/api";
 import { useOrgVariables } from "./useOrgVariables";
@@ -14,6 +14,7 @@ vi.mock("@/api", () => ({
     loadAll: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
+    updateMany: vi.fn(),
     remove: vi.fn(),
   },
 }));
@@ -73,5 +74,35 @@ describe("useOrgVariables", () => {
 
     await act(() => result.current.deleteVariable({ entity: "group", id: 1 }, variable("A")));
     expect(result.current.entities?.[0]?.variables.map((v) => v.key)).toEqual(["B"]);
+  });
+
+  it("applies the saved part of a batch to the local snapshot", async () => {
+    mocked.authStatus.mockResolvedValue(authStatus());
+    mocked.loadAll.mockResolvedValue(snapshot());
+    mocked.updateMany.mockResolvedValue({
+      results: [
+        { ok: true, variable: variable("A", { masked: true }) },
+        { ok: false, error: "Refused" },
+      ],
+    });
+    const { result } = renderHook(() => useOrgVariables());
+    await waitFor(() => expect(result.current.entities).toHaveLength(1));
+
+    const target = { entity: "group" as const, id: 1 };
+    let results: BatchUpdateResult[] = [];
+    await act(async () => {
+      results = await result.current.updateMany([
+        { target, original: variable("A"), changes: { masked: true } },
+        { target, original: variable("B"), changes: { masked: true } },
+      ]);
+    });
+    expect(results.map((r) => r.ok)).toEqual([true, false]);
+    expect(mocked.updateMany).toHaveBeenCalledWith({
+      updates: [
+        { entity: "group", id: 1, key: "A", scope: "*", changes: { masked: true } },
+        { entity: "group", id: 1, key: "B", scope: "*", changes: { masked: true } },
+      ],
+    });
+    expect(result.current.entities?.[0]?.variables.map((v) => v.masked)).toEqual([true, false]);
   });
 });

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "preact/hooks";
 import { api } from "@/api";
 import type {
   AuthStatus,
+  BatchUpdateResult,
   EntityRef,
   EntityVariables,
   GitLabVariable,
@@ -12,7 +13,17 @@ import type {
   VariableChanges,
   VariableDraft,
 } from "@shared/types";
-import { isSameVariable } from "@shared/variables";
+import { isSameVariable, MAX_BATCH_UPDATES } from "@shared/variables";
+
+/** One change in a batch: which variable, in which group or project, and what changes. */
+export interface VariableUpdate {
+  target: EntityRef;
+  original: GitLabVariable;
+  changes: VariableChanges;
+}
+
+const variableId = (entity: string, id: number, v: GitLabVariable) =>
+  `${entity}:${id}:${v.key}:${v.environment_scope}`;
 
 /** A cached snapshot older than this is refreshed in the background on open. */
 const STALE_MS = 30_000;
@@ -91,6 +102,45 @@ export function useOrgVariables() {
     patch(target, (vars) => vars.map((v) => (isSameVariable(key, scope)(v) ? variable : v)));
   }
 
+  /**
+   * Apply several updates, in batches the server accepts. Each succeeds or fails on its own;
+   * results come back in the same order. Saved changes reach the local snapshot even when a
+   * later batch can't be sent.
+   */
+  async function updateMany(items: VariableUpdate[]): Promise<BatchUpdateResult[]> {
+    const results: BatchUpdateResult[] = [];
+    try {
+      for (let i = 0; i < items.length; i += MAX_BATCH_UPDATES) {
+        const chunk = items.slice(i, i + MAX_BATCH_UPDATES);
+        const res = await api.updateMany({
+          updates: chunk.map(({ target, original, changes }) => ({
+            ...target,
+            key: original.key,
+            scope: original.environment_scope,
+            changes,
+          })),
+        });
+        results.push(...res.results);
+      }
+    } finally {
+      const saved = new Map<string, GitLabVariable>();
+      items.forEach((item, i) => {
+        const r = results[i];
+        if (r?.ok) saved.set(variableId(item.target.entity, item.target.id, item.original), r.variable);
+      });
+      if (saved.size > 0) {
+        setEntities(
+          (prev) =>
+            prev?.map((e) => ({
+              ...e,
+              variables: e.variables.map((v) => saved.get(variableId(e.entity, e.id, v)) ?? v),
+            })) ?? null,
+        );
+      }
+    }
+    return results;
+  }
+
   async function deleteVariable(target: EntityRef, original: GitLabVariable) {
     const { key, environment_scope: scope } = original;
     await api.remove({ ...target, key, scope });
@@ -123,6 +173,7 @@ export function useOrgVariables() {
     refresh,
     createVariable,
     updateVariable,
+    updateMany,
     deleteVariable,
     disconnect,
   };
