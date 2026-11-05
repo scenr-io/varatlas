@@ -5,7 +5,7 @@ import { relative } from "node:path";
 import { Hono } from "hono";
 import { compress } from "hono/compress";
 import { secureHeaders } from "hono/secure-headers";
-import type { AuthProblem, AuthStatus } from "../shared/types";
+import type { AuthProblem, AuthStatus, BatchUpdateResponse, BatchUpdateResult } from "../shared/types";
 import { isSameVariable } from "../shared/variables";
 import { clearTokenCookie, requireToken, resolveToken, setTokenCookie } from "./auth";
 import { gitlabBackend, type Backend } from "./backend";
@@ -13,9 +13,16 @@ import { allowedHosts, serverToken } from "./config";
 import { GitLabError } from "./gitlab/client";
 import { canReadVariables } from "./gitlab/user";
 import { HttpError } from "./http";
+import { pooled } from "./pooled";
 import { checkApiRequest } from "./security";
 import type { SnapshotStore } from "./snapshot";
-import { parseCreateRequest, parseDeleteRequest, parseTokenRequest, parseUpdateRequest } from "./validation";
+import {
+  parseBatchUpdateRequest,
+  parseCreateRequest,
+  parseDeleteRequest,
+  parseTokenRequest,
+  parseUpdateRequest,
+} from "./validation";
 
 /** How a failed /user call should be explained. */
 function classify(e: unknown, scopesKnown: boolean): AuthProblem {
@@ -24,6 +31,9 @@ function classify(e: unknown, scopesKnown: boolean): AuthProblem {
   if (e instanceof GitLabError && e.status === 403) return scopesKnown ? "scope" : "invalid";
   return "unreachable";
 }
+
+/** Batch updates in flight at once, to stay well clear of GitLab's rate limits. */
+const BATCH_CONCURRENCY = 5;
 
 const SCOPE_HELP = "varatlas needs the api scope, or read_api to browse without editing.";
 
@@ -207,6 +217,29 @@ export function createApp({
       vars.map((v) => (isSameVariable(key, scope)(v) ? variable : v)),
     );
     return c.json({ variable });
+  });
+
+  /** Several updates at once. Each succeeds or fails on its own; the response says which. */
+  app.patch("/api/variables", async (c) => {
+    const token = requireToken(c, getServerToken());
+    const { updates } = parseBatchUpdateRequest(await readJson(c.req.raw));
+    const results = await pooled(updates, BATCH_CONCURRENCY, async (u): Promise<BatchUpdateResult> => {
+      const { entity, id, key, scope, changes } = u;
+      try {
+        const variable = await updateVariable(token, { entity, id }, key, scope, changes).catch(
+          (e: unknown) => explainForbidden(e, "change"),
+        );
+        store.patch(token, { entity, id }, (vars) =>
+          vars.map((v) => (isSameVariable(key, scope)(v) ? variable : v)),
+        );
+        return { ok: true, variable };
+      } catch (e) {
+        if (e instanceof HttpError) return { ok: false, error: e.message };
+        console.error(e);
+        return { ok: false, error: "Unexpected server error" };
+      }
+    });
+    return c.json<BatchUpdateResponse>({ results });
   });
 
   app.delete("/api/variables", async (c) => {

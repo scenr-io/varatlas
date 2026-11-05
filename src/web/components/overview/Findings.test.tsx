@@ -54,4 +54,20 @@ describe("Findings", () => {
     expect(screen.queryByRole("button")).toBeNull();
     expect(screen.getByText("acme/a, acme/b")).toBeTruthy();
   });
+
+  it("offers a bulk fix for secrets findings when changes are allowed", () => {
+    const onFix = vi.fn();
+    const f = finding();
+    render(
+      <Findings findings={[f, finding({ id: "drift", title: "Same key" })]} onOpen={vi.fn()} onFix={onFix} />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Mask all" }));
+    expect(onFix).toHaveBeenCalledWith(f);
+    expect(screen.queryAllByRole("button", { name: /all$/ })).toHaveLength(1);
+  });
+
+  it("offers no fixes to read-only tokens", () => {
+    render(<Findings findings={[finding()]} onOpen={vi.fn()} />);
+    expect(screen.queryByRole("button", { name: "Mask all" })).toBeNull();
+  });
 });

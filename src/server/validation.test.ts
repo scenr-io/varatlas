@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { HttpError } from "./http";
-import { parseCreateRequest, parseDeleteRequest, parseTokenRequest, parseUpdateRequest } from "./validation";
+import {
+  parseBatchUpdateRequest,
+  parseCreateRequest,
+  parseDeleteRequest,
+  parseTokenRequest,
+  parseUpdateRequest,
+} from "./validation";
 
 const draft = {
   key: "API_KEY",
@@ -50,6 +56,31 @@ describe("parseUpdateRequest", () => {
 
   it("requires a scope", () => {
     rejects(() => parseUpdateRequest({ entity: "group", id: 3, key: "API_KEY", scope: " ", changes: {} }));
+  });
+});
+
+describe("parseBatchUpdateRequest", () => {
+  const update = { entity: "group", id: 1, key: "API_KEY", scope: "*", changes: { masked: true, extra: 1 } };
+
+  it("parses every update and drops unknown fields", () => {
+    expect(parseBatchUpdateRequest({ updates: [update, { ...update, id: 2 }] })).toEqual({
+      updates: [
+        { entity: "group", id: 1, key: "API_KEY", scope: "*", changes: { masked: true } },
+        { entity: "group", id: 2, key: "API_KEY", scope: "*", changes: { masked: true } },
+      ],
+    });
+  });
+
+  it("rejects missing, empty and oversized lists", () => {
+    expect(() => parseBatchUpdateRequest({})).toThrow(/must be a list/);
+    expect(() => parseBatchUpdateRequest({ updates: [] })).toThrow(/must not be empty/);
+    expect(() => parseBatchUpdateRequest({ updates: Array(501).fill(update) })).toThrow(/at most 500/);
+  });
+
+  it("rejects the whole batch when one update is invalid", () => {
+    expect(() => parseBatchUpdateRequest({ updates: [update, { ...update, key: "bad key" }] })).toThrow(
+      HttpError,
+    );
   });
 });
 

@@ -2,6 +2,8 @@
 
 import type {
   AuthStatus,
+  BatchUpdateRequest,
+  BatchUpdateResponse,
   CreateVariableRequest,
   DeleteVariableRequest,
   GitLabVariable,
@@ -34,5 +36,7 @@ export const api = {
   loadAll: (refresh = false) => call<OrgVariables>(refresh ? "/api/variables?refresh=1" : "/api/variables"),
   create: (req: CreateVariableRequest) => call<{ variable: GitLabVariable }>("/api/variables", "POST", req),
   update: (req: UpdateVariableRequest) => call<{ variable: GitLabVariable }>("/api/variables", "PUT", req),
+  /** Several updates at once; each one succeeds or fails on its own. */
+  updateMany: (req: BatchUpdateRequest) => call<BatchUpdateResponse>("/api/variables", "PATCH", req),
   remove: (req: DeleteVariableRequest) => call<{ ok: true }>("/api/variables", "DELETE", req),
 };

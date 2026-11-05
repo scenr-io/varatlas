@@ -99,6 +99,46 @@ describe("/api/variables", () => {
     );
   });
 
+  it("applies a batch of updates and reports each one", async () => {
+    stubFetch((url) => {
+      if (url.includes("/groups/2/")) return jsonResponse({ message: "403 Forbidden" }, { status: 403 });
+      return jsonResponse({
+        key: "API_KEY",
+        value: "secret-value",
+        variable_type: "env_var",
+        protected: false,
+        masked: true,
+        raw: false,
+        environment_scope: "*",
+        description: null,
+      });
+    });
+    const store = makeStore();
+    const update = { entity: "group", key: "API_KEY", scope: "*", changes: { masked: true } };
+
+    const res = await createApp({ store }).request(
+      apiRequest("/api/variables", {
+        method: "PATCH",
+        body: {
+          updates: [
+            { ...update, id: 1 },
+            { ...update, id: 2 },
+          ],
+        },
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    const { results } = await res.json();
+    expect(results[0]).toMatchObject({ ok: true, variable: { key: "API_KEY", masked: true } });
+    expect(results[1]).toEqual({
+      ok: false,
+      error: "You need the Maintainer role on this group or project to change its variables.",
+    });
+    expect(store.patch).toHaveBeenCalledTimes(1);
+    expect(store.patch).toHaveBeenCalledWith("glpat-test", { entity: "group", id: 1 }, expect.any(Function));
+  });
+
   it("explains a missing role on changes", async () => {
     stubFetch(() => jsonResponse({ message: "403 Forbidden" }, { status: 403 }));
     const res = await createApp({ store: makeStore() }).request(

@@ -95,6 +95,7 @@ export function fakeOrg(over: Partial<OrgVariablesApi> = {}): OrgVariablesApi {
     refresh: vi.fn(() => Promise.resolve(null)),
     createVariable: vi.fn(() => Promise.resolve()),
     updateVariable: vi.fn(() => Promise.resolve()),
+    updateMany: vi.fn(() => Promise.resolve([])),
     deleteVariable: vi.fn(() => Promise.resolve()),
     disconnect: vi.fn(() => Promise.resolve()),
     ...over,
